@@ -19,3 +19,5 @@ button:hover{background:#8c73f5}.ghost{background:#151a28;border-color:#333a4d;b
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
 
 .providergrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin:20px 0}.panel .provider-card{display:flex;flex-direction:column;text-align:left;gap:7px;margin:0;padding:14px;min-height:85px}.provider-card small{font-size:11px;color:#c7c1db;font-weight:400}.provider-card.selected{background:#302653;border-color:#a58cff}.providerhint{display:block;margin:12px 0}.provider-card:disabled{opacity:.65}
+
+.rolegrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}.rolegrid article{background:#101522;border:1px solid #2e3449;border-radius:12px;padding:16px}.rolegrid h3{font-size:15px;margin:0 0 8px}.rolegrid p{font-size:13px;margin:0 0 12px}.rolegrid small{color:#baabff}.missionfilter{min-width:170px;margin:0}.missionfilter select{margin-top:4px}
