@@ -1,11 +1,14 @@
-# VibeForge v0.3.0 — MVP candidate
-A Ghazwah Group product. From idea to production.
+# VibeForge v1.0.0-rc.1 — From idea to production
+A Ghazwah Group product. Release candidate; staging only.
+
 ## Run
-Node 20.9+; npm install; npm test; npm run dev. Open http://localhost:3000. Run npm run build before release. Lockfile not yet generated; commit a reviewed lockfile after installing.
+Node 22 recommended. npm install; npm test; npm run dev; npm run build. A reviewed lockfile remains a release prerequisite.
+
 ## Workflow
-Create a project → AI Blueprint Studio → use your own OpenAI API key or manual draft → review nine documents and assumptions → approve → dependency-aware tasks → copy context prompts → record agent reports and review → export Markdown, JSON and ZIP development kit.
-AI generation uses OpenAI Responses API through server route; key is not persisted; usage is charged to the key owner. Only enter your own key in the app when using a trusted deployment. No shared server key. Local mode needs no cloud account.
-## Cloud
-Optional Supabase email/password and explicit snapshots. See docs/CLOUD_SETUP.md. No live project configured.
-## Limits
-Manual review is not automated verification. Live provider, authentication, RLS, browser and production build checks are still required. No production deployment yet.
+Create a project → Blueprint Studio (7 provider choices or manual draft) → GitHub inventory → Context Manager → Mission Control → Quality Studio → review release evidence. Export agent instructions and context ZIP. No autonomous code execution or deployment.
+
+## Cloud and security
+Local projects remain on the browser after logout. Optional manual cloud snapshots using Supabase email/password and owner-only RLS. See docs/CLOUD_SETUP.md. Custom AI gateway requests require a verified cloud session; production API operations require verified cloud session. Production custom gateway hostnames must be explicitly allowlisted via VIBEFORGE_CUSTOM_HOSTS (comma-separated exact hostnames). Localhost/private IP prohibited. Per-instance rate limits are best effort, not distributed protection. Keys are not persisted by application. Provider requests may incur charges.
+
+## Release
+See docs/RELEASE-CANDIDATE.md. Live provider/authentication, browser UAT, production abuse controls, legal review, lockfile and authorization are required before public release. No production rollout implied.
