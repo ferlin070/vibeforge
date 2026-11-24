@@ -1,5 +1,4 @@
-# Project state — Phase 2
-Implemented in source: Next.js app structure, responsive landing/workspace, local project CRUD (create/read/delete), discovery wizard, manual review pipeline, editable brief, template prompt modes and Markdown export.
-Not implemented: real login/register, Supabase, AI API, server project persistence, structured AI output, verification evidence and deployment.
-Validation: deterministic generator smoke checks in authoring environment; Node test file added. Full npm install/build and browser testing pending.
-Next task: establish reproducible dependency lockfile, run tests/build and browser QA; then implement authenticated persistence and server-side AI provider.
+# VibeForge — MVP candidate v0.3.0
+Source implementation: local-first project workspace, deterministic and real BYOK OpenAI blueprint generation, nine editable documents, assumptions/questions, user approval, validated dependency graph, task context export, manual evidence/review, Markdown and JSON kit, optional Supabase auth and cloud snapshot CRUD, owner-only RLS SQL. Legacy HTML retained.
+Validation: direct authoring checks for blueprint, context, dependency blocking and cycle rejection passed. Test files added; dependency install, Next.js build, browser E2E, live API and two-account RLS tests pending. No live cloud resources configured; no production deploy.
+Known limits: AI generation uses user's key per request; provider model access and budget vary. One generation can time out; no durable AI queue. Manual approval is not independent verification. Cloud snapshots explicitly saved/restored, not automatic sync. No repository ingestion, billing, team collaboration, live research, ZIP export or agent execution. These are post-MVP or require infrastructure and testing.

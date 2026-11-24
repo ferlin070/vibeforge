@@ -1,13 +1,11 @@
-# VibeForge v0.2.0
-Independent Ghazwah Group project. Phase 2: local-first Next.js workspace preview.
-
+# VibeForge v0.3.0 — MVP candidate
+A Ghazwah Group product. From idea to production.
 ## Run
-Requires Node.js 20.9+ and npm. Run npm install, npm test, npm run dev; then open http://localhost:3000. For a production build run npm run build. No lockfile is committed yet; generate and review one after installing.
-
-## Features
-Responsive landing page, project dashboard, three-step discovery wizard, local project storage, eight-stage manual review workflow, editable project brief, prompt templates (five modes), Markdown export. Original index.html remains as a standalone reference.
-
+Node 20.9+; npm install; npm test; npm run dev. Open http://localhost:3000. Run npm run build before release. Lockfile not yet generated; commit a reviewed lockfile after installing.
+## Workflow
+Create a project → AI Blueprint Studio → use your own OpenAI API key or manual draft → review nine documents and assumptions → approve → dependency-aware tasks → copy context prompts → record agent reports and review → export Markdown development kit and JSON.
+AI generation uses OpenAI Responses API through server route; key is not persisted; usage is charged to the key owner. Only enter your own key in the app when using a trusted deployment. No shared server key. Local mode needs no cloud account.
+## Cloud
+Optional Supabase email/password and explicit snapshots. See docs/CLOUD_SETUP.md. No live project configured.
 ## Limits
-No real authentication, server database, AI model, agent execution, billing or deployment. Project data is browser-local and not appropriate for secrets. Manual review does not mean tested or verified. Next.js build and browser tests require an environment with installed dependencies.
-
-See AGENTS.md and docs/BLUEPRINT.md for the product plan.
+Manual review is not automated verification. Live provider, authentication, RLS, browser and production build checks are still required. No production deployment yet.
