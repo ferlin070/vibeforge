@@ -25,6 +25,12 @@ jobs:
       - run: npm run lint
       - run: npm audit --omit=dev --audit-level=high
       - run: npm run format:check
+        id: format
+      - name: Show formatting diff on failure
+        if: failure() && steps.format.outcome == 'failure'
+        run: |
+          npx --no-install prettier --write app/team.jsx app/page.jsx lib/navigation.mjs lib/team.mjs tests/team.test.mjs e2e/integrations.spec.mjs docs/RC12-COLLABORATION.md
+          git --no-pager diff -- app/team.jsx app/page.jsx lib/navigation.mjs lib/team.mjs tests/team.test.mjs e2e/integrations.spec.mjs docs/RC12-COLLABORATION.md
       - run: npx --no-install playwright install --with-deps chromium
       - run: npm run test:e2e
         env:
