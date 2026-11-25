@@ -7,6 +7,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import { starterBlueprint } from "../lib/blueprint.mjs";
 import { assignTask } from "../lib/mission.mjs";
 import { localHandoffFiles } from "../lib/local-handoff.mjs";
+import { reviewLocalReceipt } from "../lib/local-runner.mjs";
 import { redactExportText } from "../lib/redact.mjs";
 
 const project = {
@@ -73,7 +74,7 @@ test("offline Git preflight rejects dirty trees, wrong branch and wrong origin",
       repository: { ...project.repository, sha: git("rev-parse", "HEAD") },
     });
     const files = localHandoffFiles(p, "TASK-001");
-    for (const name of ["JOB.json", "preflight.mjs"])
+    for (const name of ["JOB.json", "preflight.mjs", "runner.mjs"])
       writeFileSync(join(pack, name), redactExportText(files[name]));
     const run = () =>
       spawnSync(process.execPath, [join(pack, "preflight.mjs")], {
@@ -81,6 +82,19 @@ test("offline Git preflight rejects dirty trees, wrong branch and wrong origin",
         encoding: "utf8",
       });
     assert.equal(run().status, 0);
+    const check = spawnSync(process.execPath, [join(pack, "runner.mjs")], {
+      cwd: repo,
+      encoding: "utf8",
+    });
+    assert.equal(check.status, 0);
+    assert.match(check.stdout, /Check only/);
+    const launch = spawnSync(
+      process.execPath,
+      [join(pack, "runner.mjs"), "--launch"],
+      { cwd: repo, encoding: "utf8" },
+    );
+    assert.notEqual(launch.status, 0);
+    assert.match(launch.stderr, /Interactive terminal required/);
     writeFileSync(join(repo, "dirty.txt"), "untracked");
     assert.match(run().stderr, /Working tree is not clean/);
     rmSync(join(repo, "dirty.txt"));
@@ -92,4 +106,28 @@ test("offline Git preflight rejects dirty trees, wrong branch and wrong origin",
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+test("receipt remains unverified and is bound to current task and repository", () => {
+  const p = assigned(project);
+  const job = JSON.parse(localHandoffFiles(p, "TASK-001")["JOB.json"]);
+  const receipt = {
+    ...job,
+    exitCode: 0,
+    finishedAt: "2026-11-25T00:00:00.000Z",
+  };
+  const before = JSON.stringify(p);
+  const summary = reviewLocalReceipt(p, "TASK-001", JSON.stringify(receipt));
+  assert.match(summary, /unverified/);
+  assert.match(summary, /No implementation or test outcome/);
+  assert.throws(() =>
+    reviewLocalReceipt(p, "TASK-001", JSON.stringify({ ...receipt, taskId: "TASK-002" })),
+  );
+  assert.throws(() =>
+    reviewLocalReceipt({ ...p, blueprintApproved: false }, "TASK-001", JSON.stringify(receipt)),
+  );
+  assert.throws(() =>
+    reviewLocalReceipt(p, "TASK-001", JSON.stringify({ ...receipt, target: { ...receipt.target, commit: "b".repeat(40) } })),
+  );
+  assert.equal(JSON.stringify(p), before);
 });
