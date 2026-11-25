@@ -82,10 +82,14 @@ test("offline Git preflight rejects dirty trees, wrong branch and wrong origin",
         encoding: "utf8",
         env: { ...process.env, ...overrides },
       });
-    assert.equal(run().status, 0);
+    const initial = run();
+    assert.equal(initial.status, 0, initial.stderr);
     assert.match(run({ GIT_DIR: join(repo, ".git") }).stderr, /Inherited Git/);
     git("config", "filter.fixture.clean", "false");
-    assert.match(run().stderr, /Git filters/);
+    assert.equal(run().status, 0);
+    writeFileSync(join(repo, ".gitattributes"), "README.md filter=fixture\n");
+    assert.match(run().stderr, /Tracked Git filters/);
+    rmSync(join(repo, ".gitattributes"));
     git("config", "--unset", "filter.fixture.clean");
     git("update-index", "--assume-unchanged", "README.md");
     assert.match(run().stderr, /Hidden index flags/);
