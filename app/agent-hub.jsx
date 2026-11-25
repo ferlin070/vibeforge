@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import AgentWorkflow from "./agent-workflow.jsx";
 import { agents, agentGuidance } from "../lib/context.mjs";
 import {
   agentGuides,
@@ -137,6 +138,7 @@ export default function AgentHub({ project, update, go }) {
           </article>
         )}
       </div>
+      <AgentWorkflow project={project} go={go} />
       <section className="panel studioPanel">
         <h2>Installation guides</h2>
         <p>
