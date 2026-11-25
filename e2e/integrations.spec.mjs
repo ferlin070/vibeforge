@@ -381,16 +381,20 @@ test("enterprise portfolio filters projects and resumes the correct next action"
 }) => {
   await page.goto("/?view=overview");
   const portfolio = page.getByRole("region", { name: "Continue building" });
-  await expect(portfolio.getByText("Booking studio", { exact: true })).toBeVisible();
+  await expect(
+    portfolio.getByText("Booking studio", { exact: true }),
+  ).toBeVisible();
   await portfolio.getByLabel("Search portfolio").fill("not present");
   await expect(portfolio.getByText("No matching projects.")).toBeVisible();
   await portfolio.getByRole("button", { name: "Reset filters" }).click();
   await portfolio.getByLabel("Portfolio status").selectOption("Planning");
   await expect(portfolio.getByText("No matching projects.")).toBeVisible();
   await portfolio.getByLabel("Portfolio status").selectOption("Implementation");
-  await portfolio.getByRole("button", {
-    name: "Continue implementation handoff →",
-  }).click();
+  await portfolio
+    .getByRole("button", {
+      name: "Continue implementation handoff →",
+    })
+    .click();
   await expect(
     page.getByRole("heading", { name: "Mission Control", exact: true }),
   ).toBeVisible();
