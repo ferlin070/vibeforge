@@ -461,10 +461,14 @@ test("architecture draft exports entities and contracts without changing project
     name: "Visual Architecture Studio",
   });
   await studio.getByLabel("Entity name").fill("Customer");
-  await studio.getByLabel("Fields (name:type, comma separated)").fill("id:uuid");
+  await studio
+    .getByLabel("Fields (name:type, comma separated)")
+    .fill("id:uuid");
   await studio.getByRole("button", { name: "Add entity" }).click();
   await studio.getByLabel("Entity name").fill("Booking");
-  await studio.getByLabel("Fields (name:type, comma separated)").fill("id:uuid");
+  await studio
+    .getByLabel("Fields (name:type, comma separated)")
+    .fill("id:uuid");
   await studio.getByRole("button", { name: "Add entity" }).click();
   await studio.getByLabel("From entity").selectOption("Customer");
   await studio.getByLabel("To entity").selectOption("Booking");
@@ -475,7 +479,9 @@ test("architecture draft exports entities and contracts without changing project
   await studio.getByRole("button", { name: "Add endpoint" }).click();
   await expect(studio.getByText("GET /api/bookings")).toBeVisible();
   const download = page.waitForEvent("download");
-  await studio.getByRole("button", { name: "Export architecture model" }).click();
+  await studio
+    .getByRole("button", { name: "Export architecture model" })
+    .click();
   expect((await download).suggestedFilename()).toBe("architecture-draft.json");
   expect((await stored(page))[0].blueprint).toEqual(approved.blueprint);
   expect((await stored(page))[0].blueprintApproved).toBe(true);
