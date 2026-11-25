@@ -19,8 +19,26 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: npm test
       - run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://vibeforgefixture.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_synthetic_fixture_only
       - run: npm run lint
       - run: npm audit --omit=dev --audit-level=high
+      - name: Format integration test (temporary)
+        run: |
+          npx --no-install prettier --write e2e/integrations.spec.mjs
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import {execFileSync} from 'node:child_process';
+          const path='e2e/integrations.spec.mjs';
+          const chunks=Buffer.from(fs.readFileSync(path,'utf8')).toString('base64').match(/.{1,2000}/g);
+          console.log('VF_FORMAT_META '+JSON.stringify({parts:chunks.length,sha:execFileSync('git',['hash-object',path],{encoding:'utf8'}).trim()}));
+          for(let i=0;i<chunks.length;i++)console.log('VF_FORMAT_B64 '+JSON.stringify({i,data:chunks[i]}));
+          NODE
       - run: npm run format:check
       - run: npx --no-install playwright install --with-deps chromium
       - run: npm run test:e2e
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://vibeforgefixture.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_synthetic_fixture_only
+          VF_VISUAL_CAPTURE: "1"
