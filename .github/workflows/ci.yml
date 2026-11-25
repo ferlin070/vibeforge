@@ -25,6 +25,12 @@ jobs:
       - run: npm run lint
       - run: npm audit --omit=dev --audit-level=high
       - run: npm run format:check
+        id: format
+      - name: Show beta formatting diff on failure
+        if: failure() && steps.format.outcome == 'failure'
+        run: |
+          npx --no-install prettier --write app/quality.jsx app/studio.jsx lib/rescue.mjs lib/model-control.mjs tests/rescue.test.mjs tests/model-control.test.mjs e2e/integrations.spec.mjs
+          git --no-pager diff -- app/quality.jsx app/studio.jsx lib/rescue.mjs lib/model-control.mjs tests/rescue.test.mjs tests/model-control.test.mjs e2e/integrations.spec.mjs
       - run: npx --no-install playwright install --with-deps chromium
       - run: npm run test:e2e
         env:
