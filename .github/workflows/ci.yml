@@ -16,28 +16,9 @@ jobs:
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
         with:
           node-version: "22"
-      - run: echo '0f31041c9a3047710f0cba7587dd827b3c02e4aa7aac85a3edc65f43cfc0649b  package-lock.json' | sha256sum -c -
       - run: npm ci --no-audit --no-fund
       - run: npm test
       - run: npm run build
       - run: npm run lint
       - run: npm audit --omit=dev --audit-level=high
-      # One-off formatting extraction on the audit branch. Remove after dedicated formatting commit.
-      - name: Format and emit tracked changes
-        if: github.head_ref == 'audit/rc2-phase1'
-        run: |
-          npx --no-install prettier --write .
-          node --input-type=module <<'NODE'
-          import fs from 'node:fs';
-                    import {execFileSync} from 'node:child_process';
-          const paths=execFileSync('git',['diff','--name-only','-z'],{encoding:'utf8'}).split('\0').filter(Boolean);
-          console.log('VF_FORMAT_COUNT '+paths.length);
-          for(const path of paths){
-            const content=fs.readFileSync(path,'utf8');
-            const chunks=Buffer.from(content,'utf8').toString('base64').match(/.{1,2000}/g)||[''];
-            const sha=execFileSync('git',['hash-object',path],{encoding:'utf8'}).trim();
-            console.log('VF_FORMAT_META '+JSON.stringify({path,parts:chunks.length,sha}));
-            for(let i=0;i<chunks.length;i++)console.log('VF_FORMAT_B64 '+JSON.stringify({path,i,content:chunks[i]}));
-          }
-          NODE
       - run: npm run format:check
