@@ -429,3 +429,26 @@ test("memory explorer edits knowledge without resetting approval", async ({
   expect(project.memory).toHaveLength(1);
   expect(project.memory[0].body).toBe("Revised body");
 });
+
+test("workflow waves allow confirmed assignment only for ready tasks", async ({
+  page,
+}) => {
+  await page.goto("/?view=agents");
+  const graph = page.getByLabel("Dependency workflow", { exact: true });
+  await expect(graph.getByRole("heading", { name: "Wave 1" })).toBeVisible();
+  const ready = graph.locator("article").filter({
+    hasText: "TASK-001 · Ready",
+  });
+  const blocked = graph.locator("article").filter({
+    hasText: "TASK-002 · Blocked",
+  });
+  await expect(blocked.getByRole("button")).toBeDisabled();
+  accept(page);
+  await ready.getByRole("button", { name: "Assign suggested agent" }).click();
+  await expect(graph.getByText("TASK-001 · Assigned")).toBeVisible();
+  const project = (await stored(page))[0];
+  expect(project.mission.assignments["TASK-001"].handedOff).toBe(false);
+  expect(project.blueprintApproved).toBe(true);
+  expect(project.blueprint).toEqual(approved.blueprint);
+  expect(project.evidence).toEqual({});
+});
