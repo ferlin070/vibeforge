@@ -4,3 +4,5 @@ dist/
 coverage/
 .vercel/
 package-lock.json
+playwright-report/
+test-results/

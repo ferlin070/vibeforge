@@ -8,6 +8,8 @@ export default defineConfig([
     "node_modules/**",
     "dist/**",
     "coverage/**",
+    "playwright-report/**",
+    "test-results/**",
     "index.html",
   ]),
 ]);
