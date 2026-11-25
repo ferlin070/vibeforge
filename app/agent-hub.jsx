@@ -81,7 +81,10 @@ export default function AgentHub({ project, update, go }) {
         </label>
         <label>
           Agent category
-          <select value={category} onChange={(e) => setCategory(e.target.value)}>
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+          >
             {["All", ...new Set(Object.values(categories))].map((item) => (
               <option key={item}>{item}</option>
             ))}
