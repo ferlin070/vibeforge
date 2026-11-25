@@ -16,6 +16,7 @@ import {
 } from "../lib/context.mjs";
 import { makeZip } from "../lib/zip.mjs";
 import { checkpointDraft } from "../lib/workspace.mjs";
+import { editMemory, searchMemory } from "../lib/memory.mjs";
 export default function ContextManager({
   project: p,
   projects,
@@ -35,7 +36,10 @@ export default function ContextManager({
     ),
     [mode, setMode] = useState("Resume"),
     [task, setTask] = useState(""),
-    [msg, setMsg] = useState("");
+    [msg, setMsg] = useState(""),
+    [memoryQuery, setMemoryQuery] = useState(""),
+    [memoryFilter, setMemoryFilter] = useState("All"),
+    [editing, setEditing] = useState("");
   if (!p)
     return (
       <section className="panel">
@@ -50,6 +54,7 @@ export default function ContextManager({
     v = versions.find((x) => x.id === version),
     diff = v ? compareContext(p, v) : null;
   const prompt = agentPrompt(p, agent, mode, task);
+  const matchingMemory = searchMemory(p, memoryQuery, memoryFilter);
   const buildAllowed =
     mode === "Build" &&
     r.ready.some((item) => item.id === task && item.status === "Ready");
@@ -142,6 +147,7 @@ export default function ContextManager({
       </section>
       <section className="panel studioPanel">
         <h2>Project memory</h2>
+        <small>{memory.length}/40 entries · Project-specific, local-first</small>
         <p>
           Knowledge notes preserve reviews and approval. Decisions, constraints
           and blockers require impact confirmation before clearing prior work.
@@ -183,22 +189,72 @@ export default function ContextManager({
           onClick={() => {
             handle(() => {
               const saved = update(
-                newMemory(
-                  p,
-                  { category, title, body },
-                  crypto.randomUUID(),
-                  new Date().toISOString(),
-                ),
+                editing
+                  ? editMemory(p, editing, { category, title, body })
+                  : newMemory(
+                      p,
+                      { category, title, body },
+                      crypto.randomUUID(),
+                      new Date().toISOString(),
+                    ),
               );
               if (!saved) throw Error("Change cancelled. Note retained.");
               setTitle("");
               setBody("");
+              setEditing("");
             });
           }}
         >
-          Add memory entry
+          {editing ? "Save memory changes" : "Add memory entry"}
         </button>
-        {memory.map((m) => (
+        {editing && (
+          <button
+            className="ghost"
+            onClick={() => {
+              setEditing("");
+              setTitle("");
+              setBody("");
+            }}
+          >
+            Cancel editing
+          </button>
+        )}
+        <div className="filterbar">
+          <label>
+            Search memory
+            <input
+              type="search"
+              value={memoryQuery}
+              onChange={(e) => setMemoryQuery(e.target.value)}
+            />
+          </label>
+          <label>
+            Memory filter
+            <select
+              value={memoryFilter}
+              onChange={(e) => setMemoryFilter(e.target.value)}
+            >
+              {["All", ...categories].map((item) => (
+                <option key={item}>{item}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <p role="status">{matchingMemory.length} matching memory entries</p>
+        <button
+          className="ghost"
+          disabled={!matchingMemory.length}
+          onClick={() =>
+            dl(
+              JSON.stringify(matchingMemory, null, 2),
+              "project-memory-selection.json",
+              "application/json",
+            )
+          }
+        >
+          Export filtered memory
+        </button>
+        {matchingMemory.map((m) => (
           <article className="taskrow" key={m.id}>
             <div>
               <small>
@@ -209,6 +265,19 @@ export default function ContextManager({
             </div>
             <button
               className="ghost"
+              disabled={Boolean(editing)}
+              onClick={() => {
+                setEditing(m.id);
+                setCategory(m.category);
+                setTitle(m.title);
+                setBody(m.body);
+              }}
+            >
+              Edit memory
+            </button>
+            <button
+              className="ghost"
+              disabled={Boolean(editing)}
               onClick={() => {
                 if (confirm("Remove this memory entry?"))
                   handle(() => {
