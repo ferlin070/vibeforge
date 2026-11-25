@@ -407,7 +407,9 @@ export default function Studio({
           </p>
           <p>
             Configuration:{" "}
-            {modelSummary.valid ? "Model ID format accepted" : "Model ID required"}
+            {modelSummary.valid
+              ? "Model ID format accepted"
+              : "Model ID required"}
             {" · "}
             {key.trim() ? "Key entered (memory only)" : "Key not entered"}
           </p>
