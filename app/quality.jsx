@@ -150,16 +150,18 @@ export default function Quality({
         ))}
       </div>
       <div className="qualitytabs">
-        {["Bugs", "Code review", "Test plan", "GitHub CI", "Release"].map((x) => (
-          <button
-            disabled={busy}
-            key={x}
-            className={tab === x ? "" : "ghost"}
-            onClick={() => setTab(x)}
-          >
-            {x}
-          </button>
-        ))}
+        {["Bugs", "Code review", "Test plan", "GitHub CI", "Release"].map(
+          (x) => (
+            <button
+              disabled={busy}
+              key={x}
+              className={tab === x ? "" : "ghost"}
+              onClick={() => setTab(x)}
+            >
+              {x}
+            </button>
+          ),
+        )}
       </div>
       {tab === "Bugs" && (
         <>
@@ -232,7 +234,10 @@ export default function Quality({
               className="ghost"
               disabled={!details.trim()}
               onClick={() =>
-                dl(debugInvestigation(p, details, task), "debug-investigation.md")
+                dl(
+                  debugInvestigation(p, details, task),
+                  "debug-investigation.md",
+                )
               }
             >
               Export debug investigation
@@ -331,7 +336,9 @@ export default function Quality({
           </section>
         </>
       )}
-      {tab === "Code review" && <CodeReview key={p.id} project={p} exportFile={dl} />}
+      {tab === "Code review" && (
+        <CodeReview key={p.id} project={p} exportFile={dl} />
+      )}
       {tab === "Test plan" && (
         <section className="panel">
           <h2>Acceptance-driven test plan</h2>
