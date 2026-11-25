@@ -230,4 +230,5 @@ test("responsive visual audit captures local synthetic screens", async ({
   }
   console.log("VF_LAYOUT " + JSON.stringify(results));
   expect(results).toHaveLength(15);
+  expect(results.filter((result) => result.overflow)).toEqual([]);
 });
