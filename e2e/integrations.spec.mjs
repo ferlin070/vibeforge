@@ -514,3 +514,84 @@ test("template library creates a separate unapproved project through the wizard"
   expect(projects[0].blueprintApproved).toBeFalsy();
   expect(projects[1].blueprint).toEqual(approved.blueprint);
 });
+
+test("collaboration shares only a brief and imports an independent draft", async ({
+  page,
+}) => {
+  const owner = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+  const peer = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+  const sentId = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
+  const incoming = {
+    id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+    sender_id: peer,
+    recipient_id: owner,
+    draft: {
+      name: "Peer project",
+      type: "Website",
+      idea: "Build a portfolio",
+      audience: "",
+      agent: "OpenCode",
+    },
+    created_at: fixture.createdAt,
+  };
+  const rows = [incoming];
+  await page.route(cloud + "/**", async (route) => {
+    const req = route.request();
+    const path = new URL(req.url()).pathname;
+    const method = req.method();
+    const headers = {
+      "access-control-allow-origin": origin,
+      "access-control-allow-headers": "apikey, authorization, content-type, prefer",
+      "access-control-allow-methods": "GET, POST, DELETE, OPTIONS",
+    };
+    if (method === "OPTIONS")
+      return route.fulfill({ status: 204, headers });
+    if (path === "/auth/v1/token")
+      return route.fulfill({
+        status: 200,
+        headers,
+        json: { ...token, user: { ...token.user, id: owner } },
+      });
+    if (path === "/rest/v1/vibeforge_shared_drafts") {
+      if (method === "POST") {
+        const body = req.postDataJSON();
+        expect(body.sender_id).toBe(owner);
+        expect(body.recipient_id).toBe(peer);
+        expect(body.draft.blueprint).toBeUndefined();
+        expect(body.draft.blueprintApproved).toBeUndefined();
+        const sent = { ...body, id: sentId, created_at: fixture.createdAt };
+        rows.push(sent);
+        return route.fulfill({ status: 201, headers, json: [sent] });
+      }
+      if (method === "DELETE") {
+        rows.splice(rows.findIndex((row) => row.id === sentId), 1);
+        return route.fulfill({ status: 200, headers, json: [{ id: sentId }] });
+      }
+      return route.fulfill({ status: 200, headers, json: rows });
+    }
+    return route.fulfill({ status: 404, headers });
+  });
+  await page.goto("/?view=team");
+  await page.getByRole("button", { name: "Open cloud account" }).click();
+  await page.getByLabel("Email", { exact: true }).fill(token.user.email);
+  await page.getByLabel("Password", { exact: true }).fill("fixture-password");
+  await page.locator("form").getByRole("button", { name: "Sign in" }).click();
+  await expect(page.getByRole("heading", { name: token.user.email })).toBeVisible();
+  await page.locator(".sidebar").getByRole("button", { name: "Team collaboration" }).click();
+  await page.getByLabel("Recipient account ID").fill(peer);
+  accept(page);
+  await page.getByRole("button", { name: "Share brief", exact: true }).click();
+  await expect(page.getByText("Brief shared. Refresh to see it in your list.")).toBeVisible();
+  await page.getByRole("button", { name: "Refresh shares" }).click();
+  await expect(page.getByRole("heading", { name: "Peer project" })).toBeVisible();
+  accept(page);
+  await page.getByRole("button", { name: "Revoke share" }).click();
+  await expect(page.getByText("Share revoked.")).toBeVisible();
+  accept(page);
+  await page.getByRole("button", { name: "Import as new draft" }).click();
+  await expect.poll(async () => (await stored(page)).length).toBe(2);
+  const projects = await stored(page);
+  expect(projects[0].name).toBe("Peer project");
+  expect(projects[0].blueprintApproved).toBe(false);
+  expect(projects[1].blueprint).toEqual(approved.blueprint);
+});
