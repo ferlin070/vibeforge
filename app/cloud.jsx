@@ -1,7 +1,7 @@
 "use client";
-import { redactData } from "../lib/redact.mjs";
+import { saveSnapshotSafely, snapshotDraft } from "../lib/workspace.mjs";
 import { useState } from "react";
-import { validateProject, validateSnapshot } from "../lib/project-schema.mjs";
+import { validateSnapshot } from "../lib/project-schema.mjs";
 import {
   cloudConfigured,
   cloudRequest,
@@ -20,6 +20,7 @@ export default function Cloud({
   recoveryToken,
   clearRecovery,
   onContinue,
+  onDraftCopy,
 }) {
   const [email, setEmail] = useState(""),
     [password, setPassword] = useState(""),
@@ -91,31 +92,18 @@ export default function Cloud({
     run(async () => {
       const p = projects.find((x) => x.id === selected);
       if (!p) return;
-      validateProject(p);
-      if (new TextEncoder().encode(JSON.stringify(p)).length > 1200000)
-        throw Error(
-          "Snapshot too large. Export the project and remove old checkpoints before saving.",
-        );
-      if (
-        !confirm(
-          "Save or replace this project snapshot in your cloud account? Recognized secret patterns will be redacted in the cloud copy; local text is unchanged.",
-        )
-      )
-        return;
-      await request(
-        "/rest/v1/vibeforge_projects?on_conflict=owner_id,id",
-        {
-          method: "POST",
-          headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
-          body: JSON.stringify({
-            id: p.id,
-            owner_id: session.id,
-            project: validateProject(redactData(p)),
-            updated_at: new Date().toISOString(),
-          }),
-        },
-        session.token,
+      const result = await saveSnapshotSafely(p, session, request, (previous) =>
+        confirm(
+          (previous ? "Replace the cloud snapshot last saved " + previous + "?" : "Create a new cloud snapshot?") +
+            "\nRecognized secret patterns will be redacted in the cloud copy. Local text is unchanged. If the cloud version changes during this operation, the save is rejected.",
+        ),
       );
+      if (result.status === "cancelled") {
+        setMsg("Save cancelled. Existing snapshot retained.");
+        return;
+      }
+      setRemote((rows) => [result.row, ...rows.filter((row) => row.id !== result.row.id)]);
+      setRemoteOwner(session.id);
       setMsg("Snapshot saved.");
     });
   const restore = (row) => {
@@ -363,6 +351,7 @@ export default function Cloud({
               ))}
             </select>
           </label>
+          <p>Backups are manual. Saves check the existing cloud version and reject concurrent changes.</p>
           <button disabled={busy || !selected} onClick={save}>
             Save cloud snapshot
           </button>
@@ -399,6 +388,22 @@ export default function Cloud({
                 </div>
                 <button disabled={busy} onClick={() => restore(row)}>
                   Restore local copy
+                </button>
+                <button
+                  className="ghost"
+                  disabled={busy}
+                  onClick={() => {
+                    try {
+                      if (!session || remoteOwner !== session.id)
+                        throw Error("Sign in and list snapshots again.");
+                      if (!confirm("Create a separate local draft from this snapshot? The original is unchanged and approvals and release evidence are reset.")) return;
+                      onDraftCopy(snapshotDraft(row, crypto.randomUUID(), new Date().toISOString()));
+                    } catch (e) {
+                      setMsg(e.message);
+                    }
+                  }}
+                >
+                  Restore as new draft
                 </button>
                 <button
                   className="ghost"

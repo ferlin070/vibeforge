@@ -277,6 +277,17 @@ export default function Home() {
     setStage("discovery");
     navigate("studio", item.id, true);
   };
+  const addRecoveredDraft = (item) => {
+    validateProject(item);
+    if (latestProjects.current.some((project) => project.id === item.id))
+      throw Error("Draft ID already exists.");
+    if (recovery) throw Error("Complete local storage recovery first.");
+    const next = [item, ...latestProjects.current];
+    // Persist first, so a quota failure cannot falsely report a recovered copy.
+    localStorage.setItem("vibeforge-v2", JSON.stringify(next));
+    setProjects(next);
+    navigate("studio", item.id, true);
+  };
   const toggle = (id) => {
     if (!p) return;
     setProjects((x) =>
@@ -990,6 +1001,7 @@ export default function Home() {
               select={selectProject}
               update={updateActive}
               newProject={() => go("new")}
+              onDraftCopy={addRecoveredDraft}
             />
           )}
           {view === "mission" && (
@@ -1051,6 +1063,7 @@ export default function Home() {
               recoveryToken={recoveryToken}
               clearRecovery={() => setRecoveryToken(null)}
               onContinue={() => go("overview")}
+              onDraftCopy={addRecoveredDraft}
             />
           )}
           {["workflow", "docs", "prompt"].includes(view) && (
