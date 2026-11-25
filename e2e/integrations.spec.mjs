@@ -633,3 +633,18 @@ test("collaboration shares only a brief and imports an independent draft", async
   expect(projects[0].blueprintApproved).toBe(false);
   expect(projects[1].blueprint).toEqual(approved.blueprint);
 });
+
+test("project rescue exports an investigation without changing approval", async ({
+  page,
+}) => {
+  await page.goto("/?view=quality");
+  await page.getByRole("button", { name: "Rescue", exact: true }).click();
+  const rescue = page.getByRole("region", { name: "Project rescue" });
+  await expect(rescue.getByRole("heading", { name: "AI Project Rescue" })).toBeVisible();
+  await rescue.getByLabel("Reported symptoms").fill("Build failed with a timeout");
+  const download = page.waitForEvent("download");
+  await rescue.getByRole("button", { name: "Export rescue investigation" }).click();
+  expect((await download).suggestedFilename()).toBe("project-rescue.md");
+  expect((await stored(page))[0].blueprint).toEqual(approved.blueprint);
+  expect((await stored(page))[0].blueprintApproved).toBe(true);
+});
