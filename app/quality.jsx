@@ -152,18 +152,23 @@ export default function Quality({
         ))}
       </div>
       <div className="qualitytabs">
-        {["Bugs", "Code review", "Rescue", "Test plan", "GitHub CI", "Release"].map(
-          (x) => (
-            <button
-              disabled={busy}
-              key={x}
-              className={tab === x ? "" : "ghost"}
-              onClick={() => setTab(x)}
-            >
-              {x}
-            </button>
-          ),
-        )}
+        {[
+          "Bugs",
+          "Code review",
+          "Rescue",
+          "Test plan",
+          "GitHub CI",
+          "Release",
+        ].map((x) => (
+          <button
+            disabled={busy}
+            key={x}
+            className={tab === x ? "" : "ghost"}
+            onClick={() => setTab(x)}
+          >
+            {x}
+          </button>
+        ))}
       </div>
       {tab === "Rescue" && (
         <section className="panel" aria-label="Project rescue">
