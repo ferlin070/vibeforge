@@ -903,17 +903,7 @@ export default function Home() {
                           value={draft.agent}
                           onChange={(e) => field("agent", e.target.value)}
                         >
-                          {[
-                            "Universal",
-                            "Codex",
-                            "Claude Code",
-                            "Cursor",
-                            "Gemini CLI",
-                            "GitHub Copilot",
-                            "Lovable",
-                            "Bolt",
-                            "Replit",
-                          ].map((s) => (
+                          {agents.map((s) => (
                             <option key={s}>{s}</option>
                           ))}
                         </select>
