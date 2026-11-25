@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  getReceivedDraft,
   importSharedDraft,
   listSharedDrafts,
   revokeSharedDraft,
@@ -114,5 +115,30 @@ test("share listing filters unexpected rows and revocation is sender only", asyn
   assert.equal(
     (await revokeSharedDraft(row, sender, request, () => true)).status,
     "revoked",
+  );
+});
+
+test("received share is rechecked by exact ID and recipient", async () => {
+  const request = async (path, opts, token) => {
+    assert.match(path, new RegExp("id=eq[.]" + row.id));
+    assert.match(path, new RegExp("recipient_id=eq[.]" + recipient.id));
+    assert.equal(token, recipient.token);
+    assert.deepEqual(opts, {});
+    return [row];
+  };
+  assert.deepEqual(await getReceivedDraft(row.id, recipient, request), row);
+  await assert.rejects(
+    getReceivedDraft(row.id, recipient, async () => []),
+    /no longer available/,
+  );
+  await assert.rejects(
+    getReceivedDraft(row.id, outsider, async () => [row]),
+    /no longer available/,
+  );
+  await assert.rejects(
+    getReceivedDraft("invalid", recipient, async () => {
+      assert.fail("Invalid IDs must not reach the API");
+    }),
+    /Invalid share ID/,
   );
 });
