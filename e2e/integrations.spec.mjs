@@ -541,11 +541,11 @@ test("collaboration shares only a brief and imports an independent draft", async
     const method = req.method();
     const headers = {
       "access-control-allow-origin": origin,
-      "access-control-allow-headers": "apikey, authorization, content-type, prefer",
+      "access-control-allow-headers":
+        "apikey, authorization, content-type, prefer",
       "access-control-allow-methods": "GET, POST, DELETE, OPTIONS",
     };
-    if (method === "OPTIONS")
-      return route.fulfill({ status: 204, headers });
+    if (method === "OPTIONS") return route.fulfill({ status: 204, headers });
     if (path === "/auth/v1/token")
       return route.fulfill({
         status: 200,
@@ -564,7 +564,10 @@ test("collaboration shares only a brief and imports an independent draft", async
         return route.fulfill({ status: 201, headers, json: [sent] });
       }
       if (method === "DELETE") {
-        rows.splice(rows.findIndex((row) => row.id === sentId), 1);
+        rows.splice(
+          rows.findIndex((row) => row.id === sentId),
+          1,
+        );
         return route.fulfill({ status: 200, headers, json: [{ id: sentId }] });
       }
       return route.fulfill({ status: 200, headers, json: rows });
@@ -576,14 +579,23 @@ test("collaboration shares only a brief and imports an independent draft", async
   await page.getByLabel("Email", { exact: true }).fill(token.user.email);
   await page.getByLabel("Password", { exact: true }).fill("fixture-password");
   await page.locator("form").getByRole("button", { name: "Sign in" }).click();
-  await expect(page.getByRole("heading", { name: token.user.email })).toBeVisible();
-  await page.locator(".sidebar").getByRole("button", { name: "Team collaboration" }).click();
+  await expect(
+    page.getByRole("heading", { name: token.user.email }),
+  ).toBeVisible();
+  await page
+    .locator(".sidebar")
+    .getByRole("button", { name: "Team collaboration" })
+    .click();
   await page.getByLabel("Recipient account ID").fill(peer);
   accept(page);
   await page.getByRole("button", { name: "Share brief", exact: true }).click();
-  await expect(page.getByText("Brief shared. Refresh to see it in your list.")).toBeVisible();
+  await expect(
+    page.getByText("Brief shared. Refresh to see it in your list."),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Refresh shares" }).click();
-  await expect(page.getByRole("heading", { name: "Peer project" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Peer project" }),
+  ).toBeVisible();
   accept(page);
   await page.getByRole("button", { name: "Revoke share" }).click();
   await expect(page.getByText("Share revoked.")).toBeVisible();
