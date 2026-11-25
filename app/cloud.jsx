@@ -2,7 +2,13 @@
 import { redactData } from "../lib/redact.mjs";
 import { useState } from "react";
 import { validateProject, validateSnapshot } from "../lib/project-schema.mjs";
-import { cloudConfigured, cloudRequest, sessionFrom, requestAccountEmail, resetRecoveredPassword } from "../lib/cloud-auth.mjs";
+import {
+  cloudConfigured,
+  cloudRequest,
+  sessionFrom,
+  requestAccountEmail,
+  resetRecoveredPassword,
+} from "../lib/cloud-auth.mjs";
 export default function Cloud({
   projects,
   selected,
@@ -61,10 +67,22 @@ export default function Cloud({
         session.token,
       );
       if (!Array.isArray(rows)) throw Error("Invalid snapshot list.");
-      const valid = rows.filter((row) => { try { validateSnapshot(row); return true; } catch { return false; } });
+      const valid = rows.filter((row) => {
+        try {
+          validateSnapshot(row);
+          return true;
+        } catch {
+          return false;
+        }
+      });
       setRemote(valid);
       setRemoteOwner(session.id);
-      setMsg(valid.length + " valid snapshots; " + (rows.length - valid.length) + " invalid snapshots excluded. Invalid cloud data was not deleted.");
+      setMsg(
+        valid.length +
+          " valid snapshots; " +
+          (rows.length - valid.length) +
+          " invalid snapshots excluded. Invalid cloud data was not deleted.",
+      );
     });
   const save = () =>
     run(async () => {
@@ -99,7 +117,8 @@ export default function Cloud({
     });
   const restore = (row) => {
     try {
-      if (!session || remoteOwner !== session.id) throw Error("Sign in and list snapshots again.");
+      if (!session || remoteOwner !== session.id)
+        throw Error("Sign in and list snapshots again.");
       const p = validateSnapshot(row);
       if (
         projects.some((x) => x.id === p.id) &&
@@ -134,16 +153,49 @@ export default function Cloud({
       ) : recoveryToken ? (
         <section className="panel form">
           <h2>Choose a new password</h2>
-          <p>Use the recovery link to change your password. You will sign in again afterwards.</p>
-          <form onSubmit={(e) => { e.preventDefault(); if (!busy) run(async () => {
-            await resetRecoveredPassword(recoveryToken, newPassword);
-            setNewPassword(""); clearRecovery(); setSession(null);
-            setMsg("Password updated. Sign in again.");
-          }); }}>
-            <label>New password<input required type="password" autoComplete="new-password" minLength={8} maxLength={128} value={newPassword} onChange={e=>setNewPassword(e.target.value)}/></label>
-            <button disabled={busy || newPassword.length < 8}>Update password</button>
+          <p>
+            Use the recovery link to change your password. You will sign in
+            again afterwards.
+          </p>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!busy)
+                run(async () => {
+                  await resetRecoveredPassword(recoveryToken, newPassword);
+                  setNewPassword("");
+                  clearRecovery();
+                  setSession(null);
+                  setMsg("Password updated. Sign in again.");
+                });
+            }}
+          >
+            <label>
+              New password
+              <input
+                required
+                type="password"
+                autoComplete="new-password"
+                minLength={8}
+                maxLength={128}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+              />
+            </label>
+            <button disabled={busy || newPassword.length < 8}>
+              Update password
+            </button>
           </form>
-          <button className="ghost" disabled={busy} onClick={() => { clearRecovery(); setNewPassword(""); }}>Cancel recovery</button>
+          <button
+            className="ghost"
+            disabled={busy}
+            onClick={() => {
+              clearRecovery();
+              setNewPassword("");
+            }}
+          >
+            Cancel recovery
+          </button>
         </section>
       ) : !session ? (
         <div className="authlayout">
@@ -232,20 +284,49 @@ export default function Cloud({
                     : "Sign in"}
               </button>
             </form>
-            <button className="ghost" disabled={busy || !email.includes("@")} onClick={() => run(async () => {
-              await requestAccountEmail("recover", email, window.location.origin + window.location.pathname);
-              setMsg("If the address is eligible, check your email for a password reset link.");
-            })}>Forgot password?</button>
-            <button className="ghost" disabled={busy || !email.includes("@")} onClick={() => run(async () => {
-              await requestAccountEmail("resend", email, window.location.origin + window.location.pathname);
-              setMsg("If confirmation is pending, check your email for a new link.");
-            })}>Resend confirmation</button>
+            <button
+              className="ghost"
+              disabled={busy || !email.includes("@")}
+              onClick={() =>
+                run(async () => {
+                  await requestAccountEmail(
+                    "recover",
+                    email,
+                    window.location.origin + window.location.pathname,
+                  );
+                  setMsg(
+                    "If the address is eligible, check your email for a password reset link.",
+                  );
+                })
+              }
+            >
+              Forgot password?
+            </button>
+            <button
+              className="ghost"
+              disabled={busy || !email.includes("@")}
+              onClick={() =>
+                run(async () => {
+                  await requestAccountEmail(
+                    "resend",
+                    email,
+                    window.location.origin + window.location.pathname,
+                  );
+                  setMsg(
+                    "If confirmation is pending, check your email for a new link.",
+                  );
+                })
+              }
+            >
+              Resend confirmation
+            </button>
             <button className="ghost fullwidth" onClick={onContinue}>
               Continue in local mode →
             </button>
             <small>
               Session stays in memory across workspace navigation; sign in again
-              after reload or refresh failure. Access and refresh tokens are held only in memory. Local data is not cleared when signing out.
+              after reload or refresh failure. Access and refresh tokens are
+              held only in memory. Local data is not cleared when signing out.
             </small>
           </section>
         </div>
@@ -301,36 +382,37 @@ export default function Cloud({
           >
             Sign out
           </button>
-          {remoteOwner === session.id && remote.map((row) => (
-            <article className="taskrow" key={row.id}>
-              <div>
-                <h3>{row.project?.name}</h3>
-                <small>{row.updated_at}</small>
-              </div>
-              <button disabled={busy} onClick={() => restore(row)}>
-                Restore local copy
-              </button>
-              <button
-                className="ghost"
-                disabled={busy}
-                onClick={() =>
-                  run(async () => {
-                    if (!confirm("Delete this cloud snapshot?")) return;
-                    await request(
-                      "/rest/v1/vibeforge_projects?id=eq." +
-                        encodeURIComponent(row.id),
-                      { method: "DELETE" },
-                      session.token,
-                    );
-                    setRemote((xs) => xs.filter((x) => x.id !== row.id));
-                    setMsg("Cloud snapshot deleted.");
-                  })
-                }
-              >
-                Delete
-              </button>
-            </article>
-          ))}
+          {remoteOwner === session.id &&
+            remote.map((row) => (
+              <article className="taskrow" key={row.id}>
+                <div>
+                  <h3>{row.project?.name}</h3>
+                  <small>{row.updated_at}</small>
+                </div>
+                <button disabled={busy} onClick={() => restore(row)}>
+                  Restore local copy
+                </button>
+                <button
+                  className="ghost"
+                  disabled={busy}
+                  onClick={() =>
+                    run(async () => {
+                      if (!confirm("Delete this cloud snapshot?")) return;
+                      await request(
+                        "/rest/v1/vibeforge_projects?id=eq." +
+                          encodeURIComponent(row.id),
+                        { method: "DELETE" },
+                        session.token,
+                      );
+                      setRemote((xs) => xs.filter((x) => x.id !== row.id));
+                      setMsg("Cloud snapshot deleted.");
+                    })
+                  }
+                >
+                  Delete
+                </button>
+              </article>
+            ))}
         </section>
       )}
       <p role="status">{msg}</p>
