@@ -18,6 +18,6 @@ Never commit credentials, send secrets in prompts, bypass authorization, remove 
 
 ## Verification
 
-Run `npm ci`, `npm test`, `npm run build`, `npm run lint`, `npm run format:check` and `npm audit --omit=dev --audit-level=high`. Record the exact commit, actual output, failed or skipped checks and known limitations. A mock is not a live integration test. Do not claim a release gate passed until the relevant evidence is verified.
+Run `npm ci`, `npm test`, `npm run build`, `npm run lint`, `npm run format:check` and `npm audit --omit=dev --audit-level=high`. Install Chromium using `npx --no-install playwright install chromium` and run `npm run test:e2e` after building. Record the exact commit, actual output, failed or skipped checks and known limitations. A mock is not a live integration test. Do not claim a release gate passed until the relevant evidence is verified.
 
 Audit changes belong on the isolated audit branch until approved. Do not promote, merge or deploy automatically. Report changes, regressions, remaining blockers and the next proposed task.

@@ -3,13 +3,13 @@
 ## Audit status
 
 - Phases 1–8: CI passed, exact baseline commit `62d4e5013fe5eed06782c49c28b3ea2b98e3beca`, [run 45523782522](https://github.com/ferlin070/vibeforge/actions/runs/45523782522), 118 tests.
-- Phase 9: documentation and project hygiene. Verify the commit-specific CI run before marking the phase complete.
-- Phase 10: browser E2E and smoke tests pending.
+- Phase 9: documentation and project hygiene passed [run 45525056061](https://github.com/ferlin070/vibeforge/actions/runs/45525056061).
+- Phase 10: Commit `7c01ab03ef4244da847d54866c4c1f734d373181`, [GitHub Actions run 45526037111](https://github.com/ferlin070/vibeforge/actions/runs/45526037111): 119 unit/integration tests and six Chromium smoke tests passed; production build, ESLint, Prettier and production dependency audit also passed (zero vulnerabilities reported).
 
 ## Required before a public launch
 
 - [ ] All ten audit phases reviewed; exact release commit passes install, tests, build, lint, format and dependency audit.
-- [ ] Real browser smoke tests on desktop and mobile: project creation, routing/history, keyboard navigation, drafts, reload, local recovery, downloads and CSP/hydration.
+- [x] Local production-mode Chromium smoke tests: project creation, routing/history, mobile keyboard navigation, drafts, reload, local recovery, downloads and CSP/hydration. Hosted staging verification is still required.
 - [ ] Authorized live Supabase testing: sign-up, confirmation, sign-in/out, refresh, password reset, resend, snapshot save/list/restore/delete, and two-account isolation.
 - [ ] Auth Site URL, allowed redirects, SMTP, signup abuse controls and backup/restore process confirmed.
 - [ ] Authorized live tests of the seven AI options and intended custom gateway configurations with compatible models and controlled budget. Review GitHub live scan and CI import.

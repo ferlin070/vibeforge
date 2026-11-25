@@ -23,9 +23,11 @@ npm run build
 npm run lint
 npm run format:check
 npm audit --omit=dev --audit-level=high
+npx --no-install playwright install chromium
+npm run test:e2e
 ```
 
-Use `npx --no-install prettier --write <changed-files>` to format deliberately. CI uses pinned GitHub Actions, read-only contents permission and Node.js 22. Dependabot checks npm and Actions weekly.
+Use `npx --no-install prettier --write <changed-files>` to format deliberately. CI uses pinned GitHub Actions, read-only contents permission, Node.js 22 and Ubuntu 24.04. Playwright uses the production build on loopback with synthetic fixtures; install browser system dependencies if required. Dependabot checks npm and Actions weekly.
 
 ## Release work
 

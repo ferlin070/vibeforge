@@ -39,9 +39,11 @@ npm run build
 npm run lint
 npm run format:check
 npm audit --omit=dev --audit-level=high
+npx --no-install playwright install chromium
+npm run test:e2e
 ```
 
-The committed npm lockfile is required. CI runs these checks using Node.js 22. Unit and mocked integration tests do not replace browser or live-service verification.
+The committed npm lockfile is required. CI runs these checks and the Chromium browser suite using Node.js 22 on Ubuntu 24.04. Browser tests use a local production build, not a deployed service. Live-service verification remains necessary.
 
 ## Architecture and configuration
 
@@ -56,6 +58,7 @@ Copy `.env.example` to `.env.local` for optional cloud configuration. Use the pu
 - [Security policy](SECURITY.md)
 - [Deployment and rollback](docs/DEPLOYMENT_RUNBOOK.md)
 - [Release gate](docs/RELEASE-CANDIDATE.md)
+- [Browser smoke-test evidence](docs/PHASE-10.md)
 - [Current project state](docs/PROJECT_STATE.md)
 - [Changelog](CHANGELOG.md)
 - [Privacy policy draft](docs/PRIVACY_DRAFT.md)

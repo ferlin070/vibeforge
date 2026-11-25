@@ -11,7 +11,7 @@
 - Phase 7: quality scoring, strict generated output, categorized provider errors and candidate review.
 - Phase 8: grouped navigation, local deep links, responsive refinements and selected unsaved-draft protection.
 - Phase 9: current architecture, user/developer/API guides, security policy, runbook, release gates and legal drafts.
-- Phase 10: pending browser smoke tests and final release review.
+- Phase 10: six passing Chromium smoke tests on a production-mode local server, accessible Knowledge category, loopback-only origin normalization and permanent browser CI. Live-service and operator release gates remain open.
 
 ## 1.0.0-rc.1
 
