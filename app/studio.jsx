@@ -32,8 +32,8 @@ export default function Studio({
   onDirtyChange,
 }) {
   const [key, setKey] = useState(""),
-    [model, setModel] = useState("gpt-4.1-mini"),
-    [provider, setProvider] = useState("openai"),
+    [model, setModel] = useState(providerById("gemini").example),
+    [provider, setProvider] = useState("gemini"),
     [baseURL, setBaseURL] = useState(""),
     [format, setFormat] = useState("chat"),
     [auth, setAuth] = useState("key"),
@@ -297,7 +297,7 @@ export default function Studio({
               }
               onClick={() => {
                 setProvider(x.id);
-                setModel(x.id === "openai" ? x.example : "");
+                setModel(["openai", "gemini"].includes(x.id) ? x.example : "");
                 setKey("");
                 setBaseURL("");
                 setMsg("");
