@@ -121,10 +121,20 @@ export default function Studio({
       const data = await res.json();
       if (!res.ok) throw Error(data.error || "Generation failed");
       const blueprint = validateBlueprint(data.blueprint);
-      setCandidate({ blueprint, source: "AI-generated draft · " + currentProvider.label + " / " + model, base: p });
-      setMsg("Candidate generated. Review its quality and apply explicitly. Existing work is unchanged.");
+      setCandidate({
+        blueprint,
+        source: "AI-generated draft · " + currentProvider.label + " / " + model,
+        base: p,
+      });
+      setMsg(
+        "Candidate generated. Review its quality and apply explicitly. Existing work is unchanged.",
+      );
     } catch (e) {
-      setMsg((e.name==="TimeoutError"||e.name==="AbortError"?"Request timed out.":e.message)+" Existing blueprint retained. No automatic retry.");
+      setMsg(
+        (e.name === "TimeoutError" || e.name === "AbortError"
+          ? "Request timed out."
+          : e.message) + " Existing blueprint retained. No automatic retry.",
+      );
     } finally {
       setKey("");
       setBusy(false);
@@ -411,14 +421,53 @@ export default function Studio({
         <section className="panel studioPanel">
           <h2>Generated candidate — not applied</h2>
           <BlueprintScore blueprint={candidate.blueprint} />
-          <p>{candidate.blueprint.tasks.length} tasks · {candidate.blueprint.questions.length} open questions</p>
-          <details><summary>Preview specification</summary>{sections.map(([id,label])=><div key={id}><h3>{label}</h3><pre>{candidate.blueprint.documents[id]}</pre></div>)}</details>
-          <button disabled={busy || candidate.base!==p} onClick={()=>{
-            if(replaceBlueprint(candidate.blueprint,candidate.source)){setCandidate(null);setMsg("Candidate applied as draft. Review and approve before implementation.");}
-          }}>Apply candidate</button>
-          <button className="ghost" onClick={()=>dl(JSON.stringify(candidate.blueprint,null,2),"blueprint-candidate.json","application/json")}>Export candidate</button>
-          <button className="ghost" onClick={()=>setCandidate(null)}>Discard candidate</button>
-          {candidate.base!==p&&<p role="status">Project changed since generation. Export candidate or generate again; stale candidate cannot overwrite current work.</p>}
+          <p>
+            {candidate.blueprint.tasks.length} tasks ·{" "}
+            {candidate.blueprint.questions.length} open questions
+          </p>
+          <details>
+            <summary>Preview specification</summary>
+            {sections.map(([id, label]) => (
+              <div key={id}>
+                <h3>{label}</h3>
+                <pre>{candidate.blueprint.documents[id]}</pre>
+              </div>
+            ))}
+          </details>
+          <button
+            disabled={busy || candidate.base !== p}
+            onClick={() => {
+              if (replaceBlueprint(candidate.blueprint, candidate.source)) {
+                setCandidate(null);
+                setMsg(
+                  "Candidate applied as draft. Review and approve before implementation.",
+                );
+              }
+            }}
+          >
+            Apply candidate
+          </button>
+          <button
+            className="ghost"
+            onClick={() =>
+              dl(
+                JSON.stringify(candidate.blueprint, null, 2),
+                "blueprint-candidate.json",
+                "application/json",
+              )
+            }
+          >
+            Export candidate
+          </button>
+          <button className="ghost" onClick={() => setCandidate(null)}>
+            Discard candidate
+          </button>
+          {candidate.base !== p && (
+            <p role="status">
+              Project changed since generation. Export candidate or generate
+              again; stale candidate cannot overwrite current work.
+            </p>
+          )}
         </section>
       )}
       {b && (
@@ -696,12 +745,26 @@ export default function Studio({
 }
 
 function BlueprintScore({ blueprint }) {
-  const q=scoreBlueprint(blueprint);
-  return <div className="summary">
-    <h2>Blueprint quality · {q.score}/100</h2>
-    <small>Deterministic heuristic only; not proof of correctness or release readiness.</small>
-    {q.breakdown.map(x=><p key={x.label}>{x.label}: {x.score}/{x.max}</p>)}
-    <p>{q.tracedCount}/{q.requirementCount} requirement IDs referenced in tasks · {q.openQuestions} open questions</p>
-    {q.warnings.map(w=><p key={w}>• {w}</p>)}
-  </div>;
+  const q = scoreBlueprint(blueprint);
+  return (
+    <div className="summary">
+      <h2>Blueprint quality · {q.score}/100</h2>
+      <small>
+        Deterministic heuristic only; not proof of correctness or release
+        readiness.
+      </small>
+      {q.breakdown.map((x) => (
+        <p key={x.label}>
+          {x.label}: {x.score}/{x.max}
+        </p>
+      ))}
+      <p>
+        {q.tracedCount}/{q.requirementCount} requirement IDs referenced in tasks
+        · {q.openQuestions} open questions
+      </p>
+      {q.warnings.map((w) => (
+        <p key={w}>• {w}</p>
+      ))}
+    </div>
+  );
 }
