@@ -46,7 +46,10 @@ test("local package requires approval, assignment and exact repository target", 
   assert.equal(JSON.parse(files["JOB.json"]).agent, "OpenCode");
   assert.equal(JSON.parse(files["JOB.json"]).target.commit, "a".repeat(40));
   assert.match(files["REPORT_TEMPLATE.md"], /Not verified/);
-  assert.equal(redactExportText(files["preflight.mjs"]), files["preflight.mjs"]);
+  assert.equal(
+    redactExportText(files["preflight.mjs"]),
+    files["preflight.mjs"],
+  );
 });
 
 test("offline Git preflight rejects dirty trees, wrong branch and wrong origin", () => {
