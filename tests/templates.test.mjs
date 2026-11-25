@@ -4,7 +4,10 @@ import { findTemplates, templateDraft, templates } from "../lib/templates.mjs";
 import { validateProject } from "../lib/project-schema.mjs";
 
 test("curated templates create valid unapproved project drafts", () => {
-  assert.equal(new Set(templates.map((item) => item.id)).size, templates.length);
+  assert.equal(
+    new Set(templates.map((item) => item.id)).size,
+    templates.length,
+  );
   for (const item of templates) {
     const draft = templateDraft(item.id);
     const project = validateProject({
