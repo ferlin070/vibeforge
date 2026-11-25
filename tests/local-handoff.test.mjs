@@ -76,11 +76,23 @@ test("offline Git preflight rejects dirty trees, wrong branch and wrong origin",
     const files = localHandoffFiles(p, "TASK-001");
     for (const name of ["JOB.json", "preflight.mjs", "runner.mjs"])
       writeFileSync(join(pack, name), redactExportText(files[name]));
-    const run = () =>
+    const run = (overrides = {}) =>
       spawnSync(process.execPath, [join(pack, "preflight.mjs")], {
         cwd: repo,
         encoding: "utf8",
+        env: { ...process.env, ...overrides },
       });
+    assert.equal(run().status, 0);
+    assert.match(run({ GIT_DIR: join(repo, ".git") }).stderr, /Inherited Git/);
+    git("config", "filter.fixture.clean", "false");
+    assert.match(run().stderr, /Git filters/);
+    git("config", "--unset", "filter.fixture.clean");
+    git("update-index", "--assume-unchanged", "README.md");
+    assert.match(run().stderr, /Hidden index flags/);
+    git("update-index", "--no-assume-unchanged", "README.md");
+    git("update-index", "--skip-worktree", "README.md");
+    assert.match(run().stderr, /Hidden index flags/);
+    git("update-index", "--no-skip-worktree", "README.md");
     assert.equal(run().status, 0);
     const check = spawnSync(process.execPath, [join(pack, "runner.mjs")], {
       cwd: repo,
