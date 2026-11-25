@@ -15,6 +15,7 @@ import Mission from "./mission.jsx";
 import Quality from "./quality.jsx";
 import Guide from "./guide.jsx";
 import DashboardFocus from "./dashboard.jsx";
+import AgentHub from "./agent-hub.jsx";
 import {
   applyProjectPatch,
   impactOf,
@@ -42,6 +43,7 @@ const nav = [
   ["studio", "✧", "AI blueprint"],
   ["repository", "⌘", "GitHub intelligence"],
   ["context", "▧", "Context manager"],
+  ["agents", "◎", "Agent hub"],
   ["mission", "◎", "Mission control"],
   ["quality", "✓", "Quality studio"],
   ["cloud", "☁", "Cloud account"],
@@ -520,9 +522,9 @@ export default function Home() {
       <nav aria-label="Workspace navigation">
         {[
           ["Workspace", nav.slice(0, 3)],
-          ["Build", nav.slice(3, 9)],
-          ["Verify", nav.slice(9, 11)],
-          ["Account", nav.slice(11)],
+          ["Build", nav.slice(3, 10)],
+          ["Verify", nav.slice(10, 12)],
+          ["Account", nav.slice(12)],
         ].map(([label, items]) => (
           <div className="navgroup" key={label}>
             <div className="side-label">{label}</div>
@@ -990,6 +992,14 @@ export default function Home() {
               select={selectProject}
               update={updateActive}
               newProject={() => go("new")}
+            />
+          )}
+          {view === "agents" && (
+            <AgentHub
+              key={p?.id || "none"}
+              project={p}
+              update={updateActive}
+              go={go}
             />
           )}
           {view === "context" && (
