@@ -504,7 +504,9 @@ test("template library creates a separate unapproved project through the wizard"
   );
   await page.getByRole("button", { name: "Continue →" }).click();
   await page.getByLabel("Preferred coding agent").selectOption("OpenCode");
-  await page.getByRole("button", { name: "Create project", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Create project", exact: true })
+    .click();
   await expect.poll(async () => (await stored(page)).length).toBe(2);
   const projects = await stored(page);
   expect(projects[0].name).toBe("Homestay Booking");
