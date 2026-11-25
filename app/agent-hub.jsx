@@ -188,10 +188,10 @@ export default function AgentHub({ project, update, go }) {
           ))}
         </div>
         <p>
-          Documented means a provider is described by its official guide.
-          Custom endpoint requires compatible protocol and configuration. Not
-          verified does not mean unsupported. Local models need sufficient
-          hardware, context length and tool-calling support.
+          Documented means a provider is described by its official guide. Custom
+          endpoint requires compatible protocol and configuration. Not verified
+          does not mean unsupported. Local models need sufficient hardware,
+          context length and tool-calling support.
         </p>
         <p>
           Keep Ollama on your own machine or trusted private network. Do not
