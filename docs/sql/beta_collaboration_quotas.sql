@@ -16,7 +16,7 @@ as $$
 declare
   actor uuid := auth.uid();
   operation text;
-  bucket timestamptz := pg_catalog.date_trunc('hour',pg_catalog.clock_timestamp());
+  bucket timestamptz;
   count_now bigint;
   max_active integer;
   max_hourly integer;
@@ -53,11 +53,12 @@ begin
     select count(*) into count_now from public.vibeforge_shared_drafts where sender_id=actor;
   end if;
   if count_now >= max_active then raise exception 'Active collaboration limit reached' using errcode='P0001'; end if;
+  bucket := pg_catalog.date_trunc('hour',pg_catalog.clock_timestamp());
   insert into vibeforge_private.write_quota as q(user_id,kind,window_start,used)
     values(actor,operation,bucket,1)
     on conflict(user_id,kind) do update set
-      window_start=excluded.window_start,
-      used=case when q.window_start=excluded.window_start then q.used+1 else 1 end
+      window_start=greatest(q.window_start,excluded.window_start),
+      used=case when q.window_start>=excluded.window_start then q.used+1 else 1 end
     returning used into count_now;
   if count_now > max_hourly then raise exception 'Hourly collaboration limit reached' using errcode='P0001'; end if;
   return new;
