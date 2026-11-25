@@ -654,3 +654,90 @@ test("project rescue exports an investigation without changing approval", async 
   expect((await stored(page))[0].blueprint).toEqual(approved.blueprint);
   expect((await stored(page))[0].blueprintApproved).toBe(true);
 });
+
+test("team workspace owner creates a workspace and publishes an independent brief", async ({
+  page,
+}) => {
+  const owner = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+  const peer = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+  const teamId = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
+  const briefId = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
+  const spaces = [];
+  const members = [];
+  const briefs = [];
+  await page.route(cloud + "/**", async (route) => {
+    const req = route.request();
+    const url = new URL(req.url());
+    const method = req.method();
+    const headers = {
+      "access-control-allow-origin": origin,
+      "access-control-allow-headers": "apikey, authorization, content-type, prefer",
+      "access-control-allow-methods": "GET, POST, PATCH, DELETE, OPTIONS",
+    };
+    if (method === "OPTIONS") return route.fulfill({ status: 204, headers });
+    if (url.pathname === "/auth/v1/token")
+      return route.fulfill({
+        status: 200,
+        headers,
+        json: { ...token, user: { ...token.user, id: owner } },
+      });
+    const tables = {
+      "/rest/v1/vibeforge_team_spaces": spaces,
+      "/rest/v1/vibeforge_team_members": members,
+      "/rest/v1/vibeforge_team_briefs": briefs,
+    };
+    const list = tables[url.pathname];
+    if (!list) return route.fulfill({ status: 404, headers });
+    if (method === "POST") {
+      const body = req.postDataJSON();
+      if (list === spaces) expect(body.owner_id).toBe(owner);
+      if (list === members) expect(body.role).toBe("viewer");
+      if (list === briefs) {
+        expect(body.author_id).toBe(owner);
+        expect(body.draft.blueprint).toBeUndefined();
+      }
+      const row = {
+        ...body,
+        ...(list === spaces ? { id: teamId } : {}),
+        ...(list === briefs ? { id: briefId } : {}),
+        created_at: fixture.createdAt,
+      };
+      list.push(row);
+      return route.fulfill({ status: 201, headers, json: [row] });
+    }
+    return route.fulfill({
+      status: 200,
+      headers,
+      json: list.filter((row) =>
+        ["id", "team_id", "user_id"].every(
+          (key) => !url.searchParams.has(key) || url.searchParams.get(key) === "eq." + row[key],
+        ),
+      ),
+    });
+  });
+  await page.goto("/?view=team");
+  await page.getByRole("button", { name: "Open cloud account" }).click();
+  await page.getByLabel("Email", { exact: true }).fill(token.user.email);
+  await page.getByLabel("Password", { exact: true }).fill("fixture-password");
+  await page.locator("form").getByRole("button", { name: "Sign in" }).click();
+  await expect(page.getByRole("heading", { name: token.user.email })).toBeVisible();
+  await page.locator(".sidebar").getByRole("button", { name: "Team collaboration" }).click();
+  const area = page.getByRole("region", { name: "Team workspaces" });
+  await area.getByLabel("Workspace name").fill("Test product team");
+  accept(page);
+  await area.getByRole("button", { name: "Create workspace" }).click();
+  await expect(area.getByText("Your role: owner")).toBeVisible();
+  await area.getByLabel("Member account ID").fill(peer);
+  accept(page);
+  await area.getByRole("button", { name: "Add member" }).click();
+  await expect(area.getByText("Member added.", { exact: true })).toBeVisible();
+  accept(page);
+  await area.getByRole("button", { name: "Publish active project brief" }).click();
+  await expect(area.getByText("Brief published.", { exact: true })).toBeVisible();
+  accept(page);
+  await area.getByRole("button", { name: "Import team draft" }).click();
+  await expect.poll(async () => (await stored(page)).length).toBe(2);
+  const projects = await stored(page);
+  expect(projects[0].blueprintApproved).toBe(false);
+  expect(projects[1].blueprint).toEqual(approved.blueprint);
+});
