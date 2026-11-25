@@ -570,6 +570,20 @@ test("collaboration shares only a brief and imports an independent draft", async
         );
         return route.fulfill({ status: 200, headers, json: [{ id: sentId }] });
       }
+      const params = new URL(req.url()).searchParams;
+      const exactId = params.get("id");
+      if (exactId) {
+        expect(params.get("recipient_id")).toBe("eq." + owner);
+        expect(params.get("limit")).toBe("1");
+        return route.fulfill({
+          status: 200,
+          headers,
+          json: rows.filter(
+            (row) =>
+              "eq." + row.id === exactId && row.recipient_id === owner,
+          ),
+        });
+      }
       return route.fulfill({ status: 200, headers, json: rows });
     }
     return route.fulfill({ status: 404, headers });
