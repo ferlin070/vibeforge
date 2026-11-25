@@ -1,9 +1,8 @@
 "use client";
 import { redactData } from "../lib/redact.mjs";
 import { useState } from "react";
-import { validateBlueprint } from "../lib/blueprint.mjs";
-const base = process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-  pub = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "";
+import { validateProject, validateSnapshot } from "../lib/project-schema.mjs";
+import { cloudConfigured, cloudRequest, sessionFrom, requestAccountEmail, resetRecoveredPassword } from "../lib/cloud-auth.mjs";
 export default function Cloud({
   projects,
   selected,
@@ -11,6 +10,8 @@ export default function Cloud({
   setSelected,
   session,
   setSession,
+  recoveryToken,
+  clearRecovery,
   onContinue,
 }) {
   const [email, setEmail] = useState(""),
@@ -18,30 +19,11 @@ export default function Cloud({
     [register, setRegister] = useState(false),
     [msg, setMsg] = useState(""),
     [busy, setBusy] = useState(false),
-    [remote, setRemote] = useState([]);
-  const configured =
-    /^https:\/\/[a-z0-9]+\.supabase\.co$/.test(base) &&
-    pub.startsWith("sb_publishable_");
-  const request = async (path, opts = {}, token = "") => {
-    const res = await fetch(base + path, {
-      ...opts,
-      headers: {
-        apikey: pub,
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: "Bearer " + token } : {}),
-        ...opts.headers,
-      },
-      cache: "no-store",
-    });
-    const data = await res.text();
-    if (!res.ok)
-      throw Error(
-        "Cloud request failed (" +
-          res.status +
-          "). Check configuration or sign in again.",
-      );
-    return data ? JSON.parse(data) : null;
-  };
+    [remote, setRemote] = useState([]),
+    [remoteOwner, setRemoteOwner] = useState(""),
+    [newPassword, setNewPassword] = useState("");
+  const configured = cloudConfigured;
+  const request = cloudRequest;
   const auth = async (signup) => {
     setBusy(true);
     try {
@@ -51,13 +33,7 @@ export default function Cloud({
         { method: "POST", body: JSON.stringify({ email, password }) },
       );
       if (d.access_token && d.user?.id) {
-        setSession({
-          token: d.access_token,
-          id: d.user.id,
-          email: d.user.email,
-          expiresAt:
-            Date.now() + Math.max(1, Number(d.expires_in) || 3600) * 1000,
-        });
+        setSession(sessionFrom(d));
         setMsg("Signed in. Cloud snapshots require explicit save/load.");
       } else setMsg("Registration submitted. Confirm your email and sign in.");
     } catch (e) {
@@ -84,13 +60,17 @@ export default function Cloud({
         {},
         session.token,
       );
-      setRemote(rows);
-      setMsg(rows.length + " cloud snapshots found.");
+      if (!Array.isArray(rows)) throw Error("Invalid snapshot list.");
+      const valid = rows.filter((row) => { try { validateSnapshot(row); return true; } catch { return false; } });
+      setRemote(valid);
+      setRemoteOwner(session.id);
+      setMsg(valid.length + " valid snapshots; " + (rows.length - valid.length) + " invalid snapshots excluded. Invalid cloud data was not deleted.");
     });
   const save = () =>
     run(async () => {
       const p = projects.find((x) => x.id === selected);
       if (!p) return;
+      validateProject(p);
       if (new TextEncoder().encode(JSON.stringify(p)).length > 1200000)
         throw Error(
           "Snapshot too large. Export the project and remove old checkpoints before saving.",
@@ -109,7 +89,7 @@ export default function Cloud({
           body: JSON.stringify({
             id: p.id,
             owner_id: session.id,
-            project: redactData(p),
+            project: validateProject(redactData(p)),
             updated_at: new Date().toISOString(),
           }),
         },
@@ -119,16 +99,8 @@ export default function Cloud({
     });
   const restore = (row) => {
     try {
-      const p = row.project;
-      if (
-        !p ||
-        p.id !== row.id ||
-        typeof p.name !== "string" ||
-        typeof p.idea !== "string" ||
-        !Array.isArray(p.reviewed)
-      )
-        throw Error("Invalid snapshot");
-      if (p.blueprint) validateBlueprint(p.blueprint);
+      if (!session || remoteOwner !== session.id) throw Error("Sign in and list snapshots again.");
+      const p = validateSnapshot(row);
       if (
         projects.some((x) => x.id === p.id) &&
         !confirm("Replace local copy with cloud snapshot?")
@@ -158,6 +130,20 @@ export default function Cloud({
             database setup from docs/CLOUD_SETUP.md. Local mode remains
             available.
           </p>
+        </section>
+      ) : recoveryToken ? (
+        <section className="panel form">
+          <h2>Choose a new password</h2>
+          <p>Use the recovery link to change your password. You will sign in again afterwards.</p>
+          <form onSubmit={(e) => { e.preventDefault(); if (!busy) run(async () => {
+            await resetRecoveredPassword(recoveryToken, newPassword);
+            setNewPassword(""); clearRecovery(); setSession(null);
+            setMsg("Password updated. Sign in again.");
+          }); }}>
+            <label>New password<input required type="password" autoComplete="new-password" minLength={8} maxLength={128} value={newPassword} onChange={e=>setNewPassword(e.target.value)}/></label>
+            <button disabled={busy || newPassword.length < 8}>Update password</button>
+          </form>
+          <button className="ghost" disabled={busy} onClick={() => { clearRecovery(); setNewPassword(""); }}>Cancel recovery</button>
         </section>
       ) : !session ? (
         <div className="authlayout">
@@ -246,13 +232,20 @@ export default function Cloud({
                     : "Sign in"}
               </button>
             </form>
+            <button className="ghost" disabled={busy || !email.includes("@")} onClick={() => run(async () => {
+              await requestAccountEmail("recover", email, window.location.origin + window.location.pathname);
+              setMsg("If the address is eligible, check your email for a password reset link.");
+            })}>Forgot password?</button>
+            <button className="ghost" disabled={busy || !email.includes("@")} onClick={() => run(async () => {
+              await requestAccountEmail("resend", email, window.location.origin + window.location.pathname);
+              setMsg("If confirmation is pending, check your email for a new link.");
+            })}>Resend confirmation</button>
             <button className="ghost fullwidth" onClick={onContinue}>
               Continue in local mode →
             </button>
             <small>
               Session stays in memory across workspace navigation; sign in again
-              after reload or expiry. Local data is not cleared when signing
-              out.
+              after reload or refresh failure. Access and refresh tokens are held only in memory. Local data is not cleared when signing out.
             </small>
           </section>
         </div>
@@ -308,7 +301,7 @@ export default function Cloud({
           >
             Sign out
           </button>
-          {remote.map((row) => (
+          {remoteOwner === session.id && remote.map((row) => (
             <article className="taskrow" key={row.id}>
               <div>
                 <h3>{row.project?.name}</h3>

@@ -16,6 +16,8 @@ import {
 } from "../lib/mission.mjs";
 import { agents } from "../lib/context.mjs";
 import { stages, makeBrief, makePrompt } from "../lib/planner.mjs";
+import { recoverLocal, validateProject } from "../lib/project-schema.mjs";
+import { refreshSession, recoveryFromFragment } from "../lib/cloud-auth.mjs";
 const empty = {
   name: "",
   type: "Web application",
@@ -53,7 +55,9 @@ export default function Home() {
     [doc, setDoc] = useState(""),
     [session, setSession] = useState(null),
     [query, setQuery] = useState(""),
-    [filter, setFilter] = useState("all");
+    [filter, setFilter] = useState("all"),
+    [recovery, setRecovery] = useState(null),
+    [recoveryToken, setRecoveryToken] = useState(null);
   const latestProjects = useRef(projects);
   useEffect(() => {
     latestProjects.current = projects;
@@ -62,28 +66,29 @@ export default function Home() {
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     try {
-      const saved = JSON.parse(localStorage.getItem("vibeforge-v2") || "[]");
-      if (Array.isArray(saved)) {
-        const valid = saved
-          .filter(
-            (p) =>
-              p &&
-              typeof p.id === "string" &&
-              typeof p.name === "string" &&
-              typeof p.idea === "string",
-          )
-          .map((p) => ({
-            ...p,
-            reviewed: Array.isArray(p.reviewed) ? p.reviewed : [],
-          }));
-        setProjects(valid);
-        setSelected(valid[0]?.id || "");
+      const raw = localStorage.getItem("vibeforge-v2");
+      const result = recoverLocal(raw);
+      setProjects(result.projects);
+      setSelected(result.projects[0]?.id || "");
+      if (result.recovery) {
+        setRecovery({ raw, rejected: result.rejected });
+        setView("guide");
       }
-    } catch {}
+    } catch {
+      setRecovery({ raw: null, rejected: 0 });
+      setView("guide");
+    }
+    const link = recoveryFromFragment(window.location.hash);
+    if (link.recognized) {
+      window.history.replaceState(null, "", window.location.pathname + window.location.search);
+      setRecoveryToken(link.token);
+      setView("cloud");
+      if (!link.token) setNotice("Email link handled. Sign in, or request a fresh recovery link.");
+    }
     setReady(true);
   }, []);
   useEffect(() => {
-    if (ready) {
+    if (ready && !recovery) {
       try {
         localStorage.setItem("vibeforge-v2", JSON.stringify(projects));
       } catch {
@@ -92,15 +97,23 @@ export default function Home() {
         );
       }
     }
-  }, [projects, ready]);
+  }, [projects, ready, recovery]);
   /* eslint-enable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (!session) return;
-    const timer = setTimeout(
-      () => setSession(null),
-      Math.max(0, session.expiresAt - Date.now()),
-    );
-    return () => clearTimeout(timer);
+    let active = true;
+    const timer = setTimeout(async () => {
+      try {
+        const next = await refreshSession(session);
+        if (active) setSession((current) => current === session ? next : current);
+      } catch {
+        if (active) setSession((current) => current === session ? null : current);
+      }
+    }, Math.max(1000, session.expiresAt - Date.now() - 60000));
+    const expiry = setTimeout(() => {
+      if (active) setSession((current) => current === session ? null : current);
+    }, Math.max(0, session.expiresAt - Date.now()));
+    return () => { active = false; clearTimeout(timer); clearTimeout(expiry); };
   }, [session]);
   const p = projects.find((x) => x.id === selected);
   // Preserve unsaved editor text when unrelated project fields change.
@@ -129,6 +142,7 @@ export default function Home() {
       reviewed: [],
       createdAt: new Date().toISOString(),
     };
+    try { validateProject(item); } catch (e) { setNotice(e.message); return; }
     setProjects((x) => [item, ...x]);
     setSelected(item.id);
     setStage("discovery");
@@ -159,8 +173,11 @@ export default function Home() {
     const impact = impactOf(current, patch);
     if (requiresImpactConfirmation(impact) && !confirm(impactMessage(impact)))
       return false;
+    let next;
+    try { next = validateProject(applyProjectPatch(current, patch)); }
+    catch (e) { setNotice(e.message); return false; }
     setProjects((xs) =>
-      xs.map((x) => (x === current ? applyProjectPatch(x, patch) : x)),
+      xs.map((x) => (x === current ? next : x)),
     );
     return true;
   };
@@ -803,6 +820,8 @@ export default function Home() {
               setSelected={setSelected}
               session={session}
               setSession={setSession}
+              recoveryToken={recoveryToken}
+              clearRecovery={() => setRecoveryToken(null)}
               onContinue={() => go("overview")}
             />
           )}
@@ -1004,6 +1023,24 @@ export default function Home() {
                 </>
               )}
             </>
+          )}
+          {recovery && (
+            <section className="panel" role="alert">
+              <h2>Local data recovery</h2>
+              <p>Local storage could not be fully validated. Automatic writes are paused. {recovery.rejected} record(s) rejected. Valid projects remain available in memory. Download the original backup before replacing stored data.</p>
+              <button disabled={recovery.raw === null} onClick={() => {
+                if (!confirm("Export the original stored data without redaction? It may contain sensitive information. Keep it private.")) return;
+                const url = URL.createObjectURL(new Blob([recovery.raw], { type: "application/octet-stream" }));
+                const link = document.createElement("a");
+                link.href = url; link.download = "vibeforge-emergency-backup.txt"; link.click();
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+              }}>Emergency original backup</button>
+              <button className="ghost" onClick={() => {
+                if (!confirm("Replace local storage with only the current validated projects? Rejected data will no longer be available here. Export first.")) return;
+                try { localStorage.setItem("vibeforge-v2", JSON.stringify(projects)); setRecovery(null); setNotice("Local storage recovered."); }
+                catch { setNotice("Storage still unavailable. Export your work."); }
+              }}>Keep validated projects and resume saving</button>
+            </section>
           )}
           {notice && (
             <p className="notice" role="status">
