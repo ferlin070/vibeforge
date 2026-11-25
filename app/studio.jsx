@@ -43,8 +43,17 @@ export default function Studio({
     [taskId, setTaskId] = useState(""),
     [report, setReport] = useState(""),
     [candidate, setCandidate] = useState(null);
-  const dirty = !!candidate || (!!report.trim() && report.trim() !== (p?.evidence?.[taskId || p?.blueprint?.tasks?.[0]?.id]?.report || "").trim());
-  useEffect(()=>{onDirtyChange?.(dirty);return ()=>onDirtyChange?.(false)},[dirty,onDirtyChange]);
+  const dirty =
+    !!candidate ||
+    (!!report.trim() &&
+      report.trim() !==
+        (
+          p?.evidence?.[taskId || p?.blueprint?.tasks?.[0]?.id]?.report || ""
+        ).trim());
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+    return () => onDirtyChange?.(false);
+  }, [dirty, onDirtyChange]);
   if (!p)
     return (
       <section className="panel">
@@ -419,7 +428,9 @@ export default function Studio({
           Start manual blueprint
         </button>
         {busy && <div className="loading-track" aria-hidden="true" />}
-        <p role="status" aria-live="polite">{msg}</p>
+        <p role="status" aria-live="polite">
+          {msg}
+        </p>
       </section>
       {candidate && (
         <section className="panel studioPanel">
