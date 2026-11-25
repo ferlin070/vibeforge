@@ -483,6 +483,19 @@ test("architecture draft exports entities and contracts without changing project
     .getByRole("button", { name: "Export architecture model" })
     .click();
   expect((await download).suggestedFilename()).toBe("architecture-draft.json");
+  await studio
+    .getByRole("button", { name: "Save local architecture draft" })
+    .click();
+  await expect(
+    studio.getByText("Architecture draft saved.", { exact: true }),
+  ).toBeVisible();
+  await page.reload();
+  accept(page);
+  await studio
+    .getByRole("button", { name: "Restore local architecture draft" })
+    .click();
+  await expect(studio.getByText("Customer → Booking")).toBeVisible();
+  await expect(studio.getByText("GET /api/bookings")).toBeVisible();
   expect((await stored(page))[0].blueprint).toEqual(approved.blueprint);
   expect((await stored(page))[0].blueprintApproved).toBe(true);
 });
