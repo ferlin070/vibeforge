@@ -26,6 +26,9 @@ const nav = (page, name) =>
   page.locator(".sidebar").getByRole("button", { name, exact: true });
 const seed = async (page, raw) => {
   await page.goto("/");
+  await expect(
+    page.getByRole("heading", { name: /Build with direction/ }),
+  ).toBeVisible();
   await page.evaluate(
     (value) => localStorage.setItem("vibeforge-v2", value),
     raw,
@@ -138,6 +141,9 @@ test("manual mission handoff and human review unlock next dependency", async ({
   const row = page.locator(".taskrow").filter({ hasText: "TASK-002" });
   await expect(row).toContainText("Ready");
   await nav(page, "Context manager").click();
+  await expect(
+    page.getByRole("heading", { name: "Project memory & handoff" }),
+  ).toBeVisible();
   await page.getByLabel("Category", { exact: true }).selectOption("Knowledge");
   await page.getByLabel("Title", { exact: true }).fill("Browser note");
   await page
@@ -263,7 +269,19 @@ test("served security headers, CSP hydration and hosted API auth rejection", asy
       data,
       headers: { origin, ...extra },
     });
-    expect(denied.status()).toBe(401);
+    expect(denied.status(), await denied.text()).toBe(401);
+    const browserStatus = await page.evaluate(
+      async ({ endpoint, data, extra }) => {
+        const res = await fetch("/api/" + endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...extra },
+          body: JSON.stringify(data),
+        });
+        return { status: res.status, body: await res.text() };
+      },
+      { endpoint, data, extra },
+    );
+    expect(browserStatus.status, browserStatus.body).toBe(401);
     const cross = await request.post("/api/" + endpoint, {
       data,
       headers: { origin: "https://invalid.example", ...extra },

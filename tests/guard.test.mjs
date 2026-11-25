@@ -79,3 +79,20 @@ test("bounded per-instance rate limit", () => {
   assert.equal(consumeLimit("fixture", 2, 1000, 100), false);
   assert.equal(consumeLimit("fixture", 2, 1101, 100), true);
 });
+
+test("Next loopback normalization accepts only the actual matching host", () => {
+  const local = (origin, host, target = "http://localhost:4173/api/ci") =>
+    new Request(target, { headers: { origin, host } });
+  assert.equal(
+    sameOrigin(local("http://127.0.0.1:4173", "127.0.0.1:4173")),
+    true,
+  );
+  for (const r of [
+    local("http://127.0.0.1:4173", "localhost:4173"),
+    local("http://127.0.0.1:9999", "127.0.0.1:9999"),
+    local("https://127.0.0.1:4173", "127.0.0.1:4173"),
+    local("http://evil.example:4173", "evil.example:4173"),
+    local("https://evil.example", "evil.example", "https://app.example/api/ci"),
+  ])
+    assert.equal(sameOrigin(r), false);
+});

@@ -144,6 +144,7 @@ export default function ContextManager({
           <label>
             Category
             <select
+              aria-label="Category"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
             >

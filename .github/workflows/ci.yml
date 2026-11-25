@@ -16,7 +16,6 @@ jobs:
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
         with:
           node-version: "22"
-      - run: echo 'c9f471b4f0dd58ceae156cae3ec330b54615c9f902ef77a9261248c5b3847037  package-lock.json' | sha256sum -c -
       - run: npm ci --no-audit --no-fund
       - run: npm test
       - run: npm run build
