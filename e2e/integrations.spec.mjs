@@ -302,3 +302,26 @@ test("checkpoint recovery creates a separate draft without overwriting the origi
   expect(projects[1].id).toBe(fixture.id);
   expect(projects[1].blueprintApproved).toBe(true);
 });
+
+test("Agent Hub filters targets and preserves approved project work", async ({
+  page,
+}) => {
+  await page.goto("/?view=agents&project=integration-fixture");
+  await expect(page.getByRole("heading", { name: "Agent Hub" })).toBeVisible();
+  await page.getByLabel("Search agents").fill("OpenCode");
+  await expect(page.getByRole("heading", { name: "OpenCode" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Hermes Agent" })).toHaveCount(
+    0,
+  );
+  await page.getByRole("button", { name: "Use agent" }).click();
+  await expect
+    .poll(async () => (await stored(page))[0].agent)
+    .toBe("OpenCode");
+  const project = (await stored(page))[0];
+  expect(project.blueprintApproved).toBe(true);
+  expect(project.blueprint).toEqual(approved.blueprint);
+  await page.reload();
+  await expect(page.getByText("Preferred agent: OpenCode")).toBeVisible();
+  await page.getByRole("button", { name: "Open Prompt Lab" }).click();
+  await expect(page.locator("pre")).toContainText("Target agent: OpenCode");
+});
