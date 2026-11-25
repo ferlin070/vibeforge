@@ -314,9 +314,7 @@ test("Agent Hub filters targets and preserves approved project work", async ({
     0,
   );
   await page.getByRole("button", { name: "Use agent" }).click();
-  await expect
-    .poll(async () => (await stored(page))[0].agent)
-    .toBe("OpenCode");
+  await expect.poll(async () => (await stored(page))[0].agent).toBe("OpenCode");
   const project = (await stored(page))[0];
   expect(project.blueprintApproved).toBe(true);
   expect(project.blueprint).toEqual(approved.blueprint);
