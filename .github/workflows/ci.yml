@@ -25,12 +25,6 @@ jobs:
       - run: npm run lint
       - run: npm audit --omit=dev --audit-level=high
       - run: npm run format:check
-        id: format
-      - name: Show formatting diff on failure
-        if: failure() && steps.format.outcome == 'failure'
-        run: |
-          npx --no-install prettier --write app/context.jsx lib/memory.mjs lib/planner.mjs tests/memory.test.mjs e2e/integrations.spec.mjs docs/RC6.3-PROJECT-MEMORY.md
-          git --no-pager diff -- app/context.jsx lib/memory.mjs lib/planner.mjs tests/memory.test.mjs e2e/integrations.spec.mjs docs/RC6.3-PROJECT-MEMORY.md
       - run: npx --no-install playwright install --with-deps chromium
       - run: npm run test:e2e
         env:
