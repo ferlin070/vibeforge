@@ -1,6 +1,8 @@
 "use client";
 import { redactText, redactData, redactExportText } from "../lib/redact.mjs";
 import { useState } from "react";
+import CodeReview from "./code-review.jsx";
+import { debugInvestigation } from "../lib/review-workbench.mjs";
 import {
   severities,
   releaseChecks,
@@ -148,7 +150,7 @@ export default function Quality({
         ))}
       </div>
       <div className="qualitytabs">
-        {["Bugs", "Test plan", "GitHub CI", "Release"].map((x) => (
+        {["Bugs", "Code review", "Test plan", "GitHub CI", "Release"].map((x) => (
           <button
             disabled={busy}
             key={x}
@@ -162,7 +164,7 @@ export default function Quality({
       {tab === "Bugs" && (
         <>
           <section className="panel">
-            <h2>Debugging studio</h2>
+            <h2>AI Debug Assistant</h2>
             <p>
               Paste a sanitized log or reproduction steps. Pattern matches are
               hypotheses, not confirmed root causes.
@@ -226,6 +228,15 @@ export default function Quality({
                 <small>{analysis.warning}</small>
               </div>
             )}
+            <button
+              className="ghost"
+              disabled={!details.trim()}
+              onClick={() =>
+                dl(debugInvestigation(p, details, task), "debug-investigation.md")
+              }
+            >
+              Export debug investigation
+            </button>
             <button
               disabled={!title.trim() || !details.trim()}
               onClick={() =>
@@ -320,6 +331,7 @@ export default function Quality({
           </section>
         </>
       )}
+      {tab === "Code review" && <CodeReview key={p.id} project={p} exportFile={dl} />}
       {tab === "Test plan" && (
         <section className="panel">
           <h2>Acceptance-driven test plan</h2>
