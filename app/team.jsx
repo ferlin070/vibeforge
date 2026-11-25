@@ -70,8 +70,8 @@ export default function Team({ project, session, go, onImport }) {
                 <p>
                   Only name, type, idea, audience and preferred agent are
                   included. No approval, repository, memory or evidence is
-                  shared. Recognized credentials are redacted, but inspect
-                  the entire brief for private data.
+                  shared. Recognized credentials are redacted, but inspect the
+                  entire brief for private data.
                 </p>
                 <details>
                   <summary>Preview exact shared brief</summary>
@@ -107,7 +107,9 @@ export default function Team({ project, session, go, onImport }) {
                         return;
                       }
                       setRecipient("");
-                      setMessage("Brief shared. Refresh to see it in your list.");
+                      setMessage(
+                        "Brief shared. Refresh to see it in your list.",
+                      );
                     })
                   }
                 >
@@ -183,7 +185,9 @@ export default function Team({ project, session, go, onImport }) {
                           session,
                           cloudRequest,
                         );
-                        const current = latest.find((item) => item.id === row.id);
+                        const current = latest.find(
+                          (item) => item.id === row.id,
+                        );
                         if (!current) throw Error("Share no longer available.");
                         onImport(
                           importSharedDraft(
