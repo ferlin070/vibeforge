@@ -15,7 +15,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
         with:
-          node-version: '22'
+          node-version: "22"
       - run: echo '0f31041c9a3047710f0cba7587dd827b3c02e4aa7aac85a3edc65f43cfc0649b  package-lock.json' | sha256sum -c -
       - run: npm ci --no-audit --no-fund
       - run: npm test
