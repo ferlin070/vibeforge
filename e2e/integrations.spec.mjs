@@ -400,3 +400,32 @@ test("enterprise portfolio filters projects and resumes the correct next action"
   ).toBeVisible();
   expect((await stored(page))[0].blueprint).toEqual(approved.blueprint);
 });
+
+test("memory explorer edits knowledge without resetting approval", async ({
+  page,
+}) => {
+  await page.goto("/?view=context");
+  await page.getByLabel("Category", { exact: true }).selectOption("Knowledge");
+  await page.getByLabel("Title", { exact: true }).fill("Fixture note");
+  await page.getByLabel("Note", { exact: true }).fill("Original body");
+  await page.getByRole("button", { name: "Add memory entry" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Fixture note" }),
+  ).toBeVisible();
+  await page.getByLabel("Search memory").fill("not present");
+  await expect(page.getByText("0 matching memory entries")).toBeVisible();
+  await page.getByLabel("Search memory").fill("Fixture");
+  await page.getByRole("button", { name: "Edit memory" }).click();
+  await page.getByLabel("Note", { exact: true }).fill("Revised body");
+  await page.getByRole("button", { name: "Save memory changes" }).click();
+  await expect(page.getByText("Revised body", { exact: true })).toBeVisible();
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Export filtered memory" }).click();
+  expect((await download).suggestedFilename()).toBe(
+    "project-memory-selection.json",
+  );
+  const project = (await stored(page))[0];
+  expect(project.blueprintApproved).toBe(true);
+  expect(project.memory).toHaveLength(1);
+  expect(project.memory[0].body).toBe("Revised body");
+});
