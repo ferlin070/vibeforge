@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { cloudRequest } from "../lib/cloud-auth.mjs";
 import {
+  getReceivedDraft,
   importSharedDraft,
   listSharedDrafts,
   revokeSharedDraft,
@@ -181,14 +182,11 @@ export default function Team({ project, session, go, onImport }) {
                       run(async () => {
                         if (!confirm("Import as a new unapproved local draft?"))
                           return;
-                        const latest = await listSharedDrafts(
+                        const current = await getReceivedDraft(
+                          row.id,
                           session,
                           cloudRequest,
                         );
-                        const current = latest.find(
-                          (item) => item.id === row.id,
-                        );
-                        if (!current) throw Error("Share no longer available.");
                         onImport(
                           importSharedDraft(
                             current,
