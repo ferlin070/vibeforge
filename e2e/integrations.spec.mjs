@@ -286,7 +286,7 @@ test("checkpoint recovery creates a separate draft without overwriting the origi
   await page.getByLabel("Checkpoint name").fill("Before changes");
   await page.getByRole("button", { name: "Save checkpoint" }).click();
   await expect(
-    page.getByRole("heading", { name: "Before changes" }),
+    page.getByRole("heading", { name: "Before changes", exact: true }),
   ).toBeVisible();
   accept(page);
   await page
