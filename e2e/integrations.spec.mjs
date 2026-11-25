@@ -31,7 +31,10 @@ const accept = (page) => page.once("dialog", (d) => d.accept());
 
 test.beforeEach(async ({ page }) => {
   await page.route("**/*", (route) =>
-    route.request().url().startsWith(origin + "/")
+    route
+      .request()
+      .url()
+      .startsWith(origin + "/")
       ? route.continue()
       : route.abort(),
   );
@@ -56,7 +59,8 @@ test("mocked cloud sign-in, explicit backup, invalid snapshot exclusion and logo
     const method = req.method();
     const headers = {
       "access-control-allow-origin": origin,
-      "access-control-allow-headers": "apikey, authorization, content-type, prefer",
+      "access-control-allow-headers":
+        "apikey, authorization, content-type, prefer",
       "access-control-allow-methods": "GET, POST, DELETE, OPTIONS",
     };
     if (method === "OPTIONS") {
@@ -80,22 +84,38 @@ test("mocked cloud sign-in, explicit backup, invalid snapshot exclusion and logo
   await page.getByLabel("Email", { exact: true }).fill(token.user.email);
   await page.getByLabel("Password", { exact: true }).fill("fixture-password");
   await page.locator("form").getByRole("button", { name: "Sign in" }).click();
-  await expect(page.getByRole("heading", { name: token.user.email })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: token.user.email }),
+  ).toBeVisible();
   accept(page);
   await page.getByRole("button", { name: "Save cloud snapshot" }).click();
   await expect(page.getByRole("status")).toContainText("Snapshot saved.");
-  expect(requests.find((r) => r.path.includes("vibeforge_projects") && r.method === "POST").body.owner_id).toBe(token.user.id);
+  expect(
+    requests.find(
+      (r) => r.path.includes("vibeforge_projects") && r.method === "POST",
+    ).body.owner_id,
+  ).toBe(token.user.id);
   await page.getByRole("button", { name: "List snapshots" }).click();
-  await expect(page.getByRole("status")).toContainText("1 valid snapshots; 1 invalid snapshots excluded");
-  await expect(page.getByRole("button", { name: "Restore local copy" })).toHaveCount(1);
+  await expect(page.getByRole("status")).toContainText(
+    "1 valid snapshots; 1 invalid snapshots excluded",
+  );
+  await expect(
+    page.getByRole("button", { name: "Restore local copy" }),
+  ).toHaveCount(1);
   accept(page);
   await page.getByRole("button", { name: "Restore local copy" }).click();
-  await expect.poll(async () => (await stored(page))[0].name).toBe(row.project.name);
+  await expect
+    .poll(async () => (await stored(page))[0].name)
+    .toBe(row.project.name);
   accept(page);
   await page.getByRole("button", { name: "Delete", exact: true }).click();
-  await expect(page.getByRole("status")).toContainText("Cloud snapshot deleted.");
+  await expect(page.getByRole("status")).toContainText(
+    "Cloud snapshot deleted.",
+  );
   await page.getByRole("button", { name: "Sign out" }).click();
-  await expect(page.getByRole("heading", { name: "Welcome back" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Welcome back" }),
+  ).toBeVisible();
   expect(JSON.stringify(await stored(page))).not.toContain(token.access_token);
   expect(JSON.stringify(await stored(page))).not.toContain(token.refresh_token);
   expect((await stored(page))[0].name).toBe(row.project.name);
@@ -105,7 +125,10 @@ test("mocked AI failure and candidate review preserve existing work until apply"
   page,
 }) => {
   let calls = 0;
-  const candidate = starterBlueprint({ ...fixture, idea: "Build a revised booking workspace" });
+  const candidate = starterBlueprint({
+    ...fixture,
+    idea: "Build a revised booking workspace",
+  });
   await page.route(origin + "/api/blueprint", async (route) => {
     calls++;
     await route.fulfill(
@@ -130,8 +153,13 @@ test("mocked AI failure and candidate review preserve existing work until apply"
   await page.getByLabel("Email", { exact: true }).fill(token.user.email);
   await page.getByLabel("Password", { exact: true }).fill("fixture-password");
   await page.locator("form").getByRole("button", { name: "Sign in" }).click();
-  await expect(page.getByRole("heading", { name: token.user.email })).toBeVisible();
-  await page.locator(".sidebar").getByRole("button", { name: "AI blueprint", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: token.user.email }),
+  ).toBeVisible();
+  await page
+    .locator(".sidebar")
+    .getByRole("button", { name: "AI blueprint", exact: true })
+    .click();
   const key = page.getByLabel(/API key/);
   const generate = page.getByRole("button", { name: "Generate with AI ✦" });
   await key.fill("fixture-key-1234");
@@ -144,17 +172,23 @@ test("mocked AI failure and candidate review preserve existing work until apply"
   await key.fill("fixture-key-1234");
   accept(page);
   await generate.click();
-  await expect(page.getByRole("heading", { name: "Generated candidate — not applied" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Generated candidate — not applied" }),
+  ).toBeVisible();
   expect((await stored(page))[0].blueprint).toEqual(approved.blueprint);
   expect((await stored(page))[0].blueprintApproved).toBe(true);
   accept(page);
   await page.getByRole("button", { name: "Apply candidate" }).click();
-  await expect.poll(async () => (await stored(page))[0].blueprintApproved).toBe(false);
+  await expect
+    .poll(async () => (await stored(page))[0].blueprintApproved)
+    .toBe(false);
   expect((await stored(page))[0].blueprint).toEqual(candidate);
   expect(calls).toBe(2);
 });
 
-test("responsive visual audit captures local synthetic screens", async ({ page }) => {
+test("responsive visual audit captures local synthetic screens", async ({
+  page,
+}) => {
   const results = [];
   for (const width of [390, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 });
@@ -167,7 +201,12 @@ test("responsive visual audit captures local synthetic screens", async ({ page }
         page: document.documentElement.scrollWidth,
         main: document.querySelector("#main-content").clientWidth,
       }));
-      results.push({ view, width, ...metrics, overflow: metrics.page > width + 1 });
+      results.push({
+        view,
+        width,
+        ...metrics,
+        overflow: metrics.page > width + 1,
+      });
       if (
         process.env.VF_VISUAL_CAPTURE === "1" &&
         ((width === 1440 && ["overview", "cloud"].includes(view)) ||
@@ -176,7 +215,16 @@ test("responsive visual audit captures local synthetic screens", async ({ page }
         const shot = await page.screenshot({ type: "jpeg", quality: 36 });
         const chunks = shot.toString("base64").match(/.{1,2000}/g);
         for (let i = 0; i < chunks.length; i++)
-          console.log("VF_SHOT " + JSON.stringify({ view, width, i, count: chunks.length, data: chunks[i] }));
+          console.log(
+            "VF_SHOT " +
+              JSON.stringify({
+                view,
+                width,
+                i,
+                count: chunks.length,
+                data: chunks[i],
+              }),
+          );
       }
     }
   }
