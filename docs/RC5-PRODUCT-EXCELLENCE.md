@@ -32,3 +32,11 @@ These are manual prompt and context handoff targets, not installed agent runtime
 Mission Control exports a task-scoped ZIP only for an approved, assigned task with reviewed dependencies and a pinned GitHub repository target. The package contains JOB.json, PROMPT.md, REPORT_TEMPLATE.md, README.md and a Node.js Git preflight script. Extract outside the worktree and review all content before sharing. Run the script only in a trusted local repository with Node.js and Git installed; it checks the configured origin, branch, exact HEAD and working-tree status. It does not start an agent, clone a repository, change Git refs, upload evidence or establish a network connection to VibeForge.
 
 The manifest is an unsigned local snapshot, not proof of current authorization. Recheck current approval and task assignment before manual execution. No remote runner, device pairing, stored credentials, background execution, database migration or automatic review is introduced. The operator remains responsible for external agent permissions and costs. Tests exercise a disposable Git repository without using a remote server.
+
+## Architecture and verification workbenches
+
+Architecture Workbench offers three candidate deployment patterns, logical flow, project-aware read-only planning and an ADR candidate export. Database/API/security/infrastructure deliverables are instructions for the selected external agent, not generated schemas or a live architecture discovery. The existing AI blueprint provider form remains unchanged.
+
+Quality Studio extends its existing log heuristics and bug tracker with a bounded project-aware debug investigation export and acceptance criteria linked to a selected task. Code review checks added lines in a pasted diff for a small set of patterns, reports counts rather than raw sensitive lines, and exports a read-only agent review prompt. Inputs remain temporary. Neither workbench executes code, calls a paid model, changes evidence, applies fixes, certifies security or grants deployment approval. Redaction is best effort. Verify findings against actual files, tests and authorization boundaries.
+
+Release readiness remains subject to the gates in RELEASE-CANDIDATE.md. A staged build is not a public release.
