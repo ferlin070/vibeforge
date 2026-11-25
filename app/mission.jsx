@@ -99,7 +99,9 @@ export default function Mission({
       link.download = t.id + "-local-agent.zip";
       link.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
-      setMsg("Local package export requested. No execution or handoff recorded.");
+      setMsg(
+        "Local package export requested. No execution or handoff recorded.",
+      );
     } catch (e) {
       setMsg(e.message);
     }
@@ -306,8 +308,8 @@ export default function Mission({
             Export local agent package
           </button>
           <small>
-            Requires an exact GitHub branch and commit scan. The ZIP includes
-            an offline Git preflight, task prompt and blank report template.
+            Requires an exact GitHub branch and commit scan. The ZIP includes an
+            offline Git preflight, task prompt and blank report template.
           </small>
           <button
             disabled={!actionable || !t.assignment || t.assignment.handedOff}
