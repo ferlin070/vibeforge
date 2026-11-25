@@ -25,12 +25,6 @@ jobs:
       - run: npm run lint
       - run: npm audit --omit=dev --audit-level=high
       - run: npm run format:check
-        id: format
-      - name: Show formatting diff on failure
-        if: failure() && steps.format.outcome == 'failure'
-        run: |
-          npx --no-install prettier --write app/page.jsx app/cloud.jsx lib/workspace.mjs tests/workspace.test.mjs e2e/integrations.spec.mjs docs/RC6.1-SECURITY-UAT.md
-          git --no-pager diff -- app/page.jsx app/cloud.jsx lib/workspace.mjs tests/workspace.test.mjs e2e/integrations.spec.mjs docs/RC6.1-SECURITY-UAT.md
       - run: npx --no-install playwright install --with-deps chromium
       - run: npm run test:e2e
         env:
