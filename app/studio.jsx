@@ -791,7 +791,9 @@ function BlueprintScore({ blueprint }) {
       </small>
       {q.breakdown.map((x) => (
         <div className="quality-meter" key={x.label}>
-          <span>{x.label}: {x.score}/{x.max}</span>
+          <span>
+            {x.label}: {x.score}/{x.max}
+          </span>
           <meter min={0} max={x.max} value={x.score} aria-label={x.label} />
         </div>
       ))}
@@ -804,10 +806,13 @@ function BlueprintScore({ blueprint }) {
       ))}
       {q.taskFindings.length > 0 && (
         <details>
-          <summary>Acceptance criteria to review ({q.taskFindings.length} tasks)</summary>
+          <summary>
+            Acceptance criteria to review ({q.taskFindings.length} tasks)
+          </summary>
           {q.taskFindings.map((task) => (
             <p key={task.id}>
-              {task.id}: {task.observable}/{task.criteria} criteria with observable signals.
+              {task.id}: {task.observable}/{task.criteria} criteria with
+              observable signals.
             </p>
           ))}
         </details>
@@ -824,7 +829,11 @@ function DocumentReader({ text }) {
         const heading = line.match(/^#{1,6}\s+(.+)$/);
         if (heading) return <h3 key={i}>{heading[1]}</h3>;
         if (!line.trim()) return <div className="document-space" key={i} />;
-        return <div className="document-line" key={i}>{line}</div>;
+        return (
+          <div className="document-line" key={i}>
+            {line}
+          </div>
+        );
       })}
     </article>
   );

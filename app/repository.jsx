@@ -117,8 +117,8 @@ export default function Repository({
           />
         </label>
         <small>
-          Leave blank for the repository default. The scan resolves an exact branch
-          to a commit before reading the tree.
+          Leave blank for the repository default. The scan resolves an exact
+          branch to a commit before reading the tree.
         </small>
         <label>
           Optional GitHub read-only token for private repos
@@ -192,7 +192,9 @@ export default function Repository({
                 placeholder="Search by filename or folder"
               />
             </label>
-            <p role="status">{visiblePaths.length} of {result.paths.length} captured paths</p>
+            <p role="status">
+              {visiblePaths.length} of {result.paths.length} captured paths
+            </p>
             <pre>{visiblePaths.join("\n") || "No matching files."}</pre>
           </section>
         </>

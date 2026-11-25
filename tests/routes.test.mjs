@@ -365,10 +365,14 @@ test("repository scan pins selected branch to exact commit and tree", async () =
   const paths = [];
   runAuthenticated = async () => {
     const response = await repository(
-      request("repository", { repo: "owner/repo", branch }, {
-        "x-vibeforge-session": token,
-        "x-github-token": "fake_github_token",
-      }),
+      request(
+        "repository",
+        { repo: "owner/repo", branch },
+        {
+          "x-vibeforge-session": token,
+          "x-github-token": "fake_github_token",
+        },
+      ),
     );
     assert.equal(response.status, 200);
     const result = (await response.json()).inventory;
@@ -381,13 +385,18 @@ test("repository scan pins selected branch to exact commit and tree", async () =
     paths.push(u.pathname + u.search);
     assert.equal(u.hostname, "api.github.com");
     if (u.pathname.includes("/git/ref/heads/")) {
-      assert.equal(decodeURIComponent(u.pathname.split("/git/ref/heads/")[1]), branch);
+      assert.equal(
+        decodeURIComponent(u.pathname.split("/git/ref/heads/")[1]),
+        branch,
+      );
       return Response.json({ ref: "refs/heads/" + branch, object: { sha } });
     }
     if (u.pathname.includes("/commits/"))
       return Response.json({ sha, commit: { tree: { sha } } });
     if (u.pathname.includes("/git/trees/"))
-      return Response.json({ tree: [{ path: "package-lock.json", type: "blob" }] });
+      return Response.json({
+        tree: [{ path: "package-lock.json", type: "blob" }],
+      });
     if (u.pathname.includes("/contents/")) {
       assert.equal(u.searchParams.get("ref"), sha);
       return new Response("", { status: 404 });

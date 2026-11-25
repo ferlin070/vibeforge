@@ -25,7 +25,10 @@ export async function POST(req) {
       repo = parseRepo(body.repo);
       requestedBranch = parseBranch(body.branch);
     } catch {
-      return reply({ error: "Enter a valid GitHub repository and branch." }, 400);
+      return reply(
+        { error: "Enter a valid GitHub repository and branch." },
+        400,
+      );
     }
     const token = req.headers.get("x-github-token") || "";
     if (token && !/^[A-Za-z0-9_\-]{12,300}$/.test(token))
@@ -51,7 +54,10 @@ export async function POST(req) {
     const branch = requestedBranch || meta.default_branch;
     const ref = await get("/git/ref/heads/" + encodeURIComponent(branch), true);
     if (!ref) return reply({ error: "Branch not found." }, 404);
-    if (ref.ref !== "refs/heads/" + branch || !/^[a-f0-9]{40}$/.test(ref.object?.sha || ""))
+    if (
+      ref.ref !== "refs/heads/" + branch ||
+      !/^[a-f0-9]{40}$/.test(ref.object?.sha || "")
+    )
       return reply({ error: "Unexpected GitHub branch reference." }, 502);
     const commit = await get("/commits/" + ref.object.sha);
     if (commit.sha !== ref.object.sha)

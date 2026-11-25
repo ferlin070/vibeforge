@@ -119,6 +119,19 @@ test("repository normalization and honest inventory", () => {
 test("branch names are portable and reject ambiguous or unsafe refs", () => {
   assert.equal(parseBranch(undefined), "");
   assert.equal(parseBranch("audit/rc2-phase1"), "audit/rc2-phase1");
-  for (const value of ["../main", "main?x", "main#tag", "a//b", ".hidden", "x.lock", "-main", "a/.", "a/../b", "a%2Fb", "x".repeat(256), 1])
+  for (const value of [
+    "../main",
+    "main?x",
+    "main#tag",
+    "a//b",
+    ".hidden",
+    "x.lock",
+    "-main",
+    "a/.",
+    "a/../b",
+    "a%2Fb",
+    "x".repeat(256),
+    1,
+  ])
     assert.throws(() => parseBranch(value));
 });
