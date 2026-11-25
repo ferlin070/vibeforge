@@ -153,11 +153,21 @@ test("conditional snapshot deletion requires explicit approval and exact version
 
 test("missing or changed cloud snapshot does not report successful deletion", async () => {
   await assert.rejects(
-    deleteSnapshotSafely(row, session, async () => [], () => true),
+    deleteSnapshotSafely(
+      row,
+      session,
+      async () => [],
+      () => true,
+    ),
     /changed or disappeared/,
   );
   await assert.rejects(
-    deleteSnapshotSafely(row, null, async () => [row], () => true),
+    deleteSnapshotSafely(
+      row,
+      null,
+      async () => [row],
+      () => true,
+    ),
     /Sign in/,
   );
 });
