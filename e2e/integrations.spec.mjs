@@ -74,11 +74,19 @@ test("mocked cloud sign-in, explicit backup, invalid snapshot exclusion and logo
       await route.fulfill({
         status: 200,
         headers,
-        json: new URL(req.url()).searchParams.has("id") ? [] : [row, { ...row, id: "invalid" }],
+        json: new URL(req.url()).searchParams.has("id")
+          ? []
+          : [row, { ...row, id: "invalid" }],
       });
     } else if (path === "/rest/v1/vibeforge_projects" && method === "POST") {
       const body = req.postDataJSON();
-      await route.fulfill({ status: 201, headers, json: [{ id: body.id, project: body.project, updated_at: body.updated_at }] });
+      await route.fulfill({
+        status: 201,
+        headers,
+        json: [
+          { id: body.id, project: body.project, updated_at: body.updated_at },
+        ],
+      });
     } else {
       await route.fulfill({ status: 204, headers });
     }
@@ -271,14 +279,22 @@ test("dashboard command center navigates to approved handoff queue", async ({
   ).toBeVisible();
 });
 
-test("checkpoint recovery creates a separate draft without overwriting the original", async ({ page }) => {
+test("checkpoint recovery creates a separate draft without overwriting the original", async ({
+  page,
+}) => {
   await page.goto("/?view=context");
   await page.getByLabel("Checkpoint name").fill("Before changes");
   await page.getByRole("button", { name: "Save checkpoint" }).click();
-  await expect(page.getByRole("heading", { name: "Before changes" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Before changes" }),
+  ).toBeVisible();
   accept(page);
-  await page.getByRole("button", { name: "Restore checkpoint as draft" }).click();
-  await expect(page.getByRole("heading", { name: "AI Blueprint Studio", exact: true })).toBeVisible();
+  await page
+    .getByRole("button", { name: "Restore checkpoint as draft" })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "AI Blueprint Studio", exact: true }),
+  ).toBeVisible();
   await expect.poll(async () => (await stored(page)).length).toBe(2);
   const projects = await stored(page);
   expect(projects[0].name).toBe(fixture.name + " (recovered draft)");

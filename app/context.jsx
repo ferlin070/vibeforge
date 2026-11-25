@@ -228,8 +228,8 @@ export default function ContextManager({
         <h2>Context versions</h2>
         <p>
           Capture a read-only checkpoint of the specification, memory and review
-          evidence. Compare it with the current state or restore as a separate unapproved draft. Up
-          to three checkpoints per project.
+          evidence. Compare it with the current state or restore as a separate
+          unapproved draft. Up to three checkpoints per project.
         </p>
         <label>
           Checkpoint name
@@ -245,14 +245,17 @@ export default function ContextManager({
           onClick={() =>
             handle(() => {
               const id = crypto.randomUUID();
-              if (!update({
-                contextVersions: checkpoint(
-                  p,
-                  label,
-                  id,
-                  new Date().toISOString(),
-                ),
-              })) throw Error("Checkpoint not saved. Existing work retained.");
+              if (
+                !update({
+                  contextVersions: checkpoint(
+                    p,
+                    label,
+                    id,
+                    new Date().toISOString(),
+                  ),
+                })
+              )
+                throw Error("Checkpoint not saved. Existing work retained.");
               setVersion(id);
               setLabel("");
             })
@@ -269,14 +272,29 @@ export default function ContextManager({
             <button className="ghost" onClick={() => setVersion(x.id)}>
               Compare
             </button>
-            <button className="ghost" onClick={() => {
-              try {
-                if (!confirm("Create a separate local draft from this checkpoint? The original is unchanged. Repository inventory, approvals, task evidence and release evidence must be reviewed again.")) return;
-                onDraftCopy(checkpointDraft(p, x.id, crypto.randomUUID(), new Date().toISOString()));
-              } catch (e) {
-                setMsg(e.message);
-              }
-            }}>
+            <button
+              className="ghost"
+              onClick={() => {
+                try {
+                  if (
+                    !confirm(
+                      "Create a separate local draft from this checkpoint? The original is unchanged. Repository inventory, approvals, task evidence and release evidence must be reviewed again.",
+                    )
+                  )
+                    return;
+                  onDraftCopy(
+                    checkpointDraft(
+                      p,
+                      x.id,
+                      crypto.randomUUID(),
+                      new Date().toISOString(),
+                    ),
+                  );
+                } catch (e) {
+                  setMsg(e.message);
+                }
+              }}
+            >
               Restore checkpoint as draft
             </button>
             <button

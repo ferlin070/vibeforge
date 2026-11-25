@@ -94,7 +94,9 @@ export default function Cloud({
       if (!p) return;
       const result = await saveSnapshotSafely(p, session, request, (previous) =>
         confirm(
-          (previous ? "Replace the cloud snapshot last saved " + previous + "?" : "Create a new cloud snapshot?") +
+          (previous
+            ? "Replace the cloud snapshot last saved " + previous + "?"
+            : "Create a new cloud snapshot?") +
             "\nRecognized secret patterns will be redacted in the cloud copy. Local text is unchanged. If the cloud version changes during this operation, the save is rejected.",
         ),
       );
@@ -102,7 +104,10 @@ export default function Cloud({
         setMsg("Save cancelled. Existing snapshot retained.");
         return;
       }
-      setRemote((rows) => [result.row, ...rows.filter((row) => row.id !== result.row.id)]);
+      setRemote((rows) => [
+        result.row,
+        ...rows.filter((row) => row.id !== result.row.id),
+      ]);
       setRemoteOwner(session.id);
       setMsg("Snapshot saved.");
     });
@@ -351,7 +356,10 @@ export default function Cloud({
               ))}
             </select>
           </label>
-          <p>Backups are manual. Saves check the existing cloud version and reject concurrent changes.</p>
+          <p>
+            Backups are manual. Saves check the existing cloud version and
+            reject concurrent changes.
+          </p>
           <button disabled={busy || !selected} onClick={save}>
             Save cloud snapshot
           </button>
@@ -396,8 +404,19 @@ export default function Cloud({
                     try {
                       if (!session || remoteOwner !== session.id)
                         throw Error("Sign in and list snapshots again.");
-                      if (!confirm("Create a separate local draft from this snapshot? The original is unchanged and approvals and release evidence are reset.")) return;
-                      onDraftCopy(snapshotDraft(row, crypto.randomUUID(), new Date().toISOString()));
+                      if (
+                        !confirm(
+                          "Create a separate local draft from this snapshot? The original is unchanged and approvals and release evidence are reset.",
+                        )
+                      )
+                        return;
+                      onDraftCopy(
+                        snapshotDraft(
+                          row,
+                          crypto.randomUUID(),
+                          new Date().toISOString(),
+                        ),
+                      );
                     } catch (e) {
                       setMsg(e.message);
                     }

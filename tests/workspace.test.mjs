@@ -2,7 +2,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { starterBlueprint } from "../lib/blueprint.mjs";
 import { checkpoint } from "../lib/context.mjs";
-import { checkpointDraft, snapshotDraft, saveSnapshotSafely } from "../lib/workspace.mjs";
+import {
+  checkpointDraft,
+  snapshotDraft,
+  saveSnapshotSafely,
+} from "../lib/workspace.mjs";
 
 const now = "2026-11-25T00:00:00.000Z";
 const p = {
@@ -14,7 +18,10 @@ const p = {
   agent: "Codex",
   reviewed: [],
   createdAt: now,
-  blueprint: starterBlueprint({ name: "Booking", idea: "Build a booking application" }),
+  blueprint: starterBlueprint({
+    name: "Booking",
+    idea: "Build a booking application",
+  }),
   blueprintApproved: true,
   evidence: {},
 };
@@ -22,7 +29,10 @@ const row = { id: p.id, project: p, updated_at: now };
 const session = { id: "fixture-owner", token: "fixture-token" };
 
 test("checkpoint and snapshot draft recovery preserve the original and reset approvals", () => {
-  const source = { ...p, contextVersions: checkpoint(p, "Baseline", "version", now) };
+  const source = {
+    ...p,
+    contextVersions: checkpoint(p, "Baseline", "version", now),
+  };
   const a = checkpointDraft(source, "version", "new-checkpoint", now);
   const b = snapshotDraft(row, "new-snapshot", now);
   for (const copy of [a, b]) {
@@ -42,9 +52,17 @@ test("new snapshots use insert only, never an unconditional upsert", async () =>
     calls.push({ path, options, token });
     if (!options.method) return [];
     const body = JSON.parse(options.body);
-    return [{ id: body.id, project: body.project, updated_at: body.updated_at }];
+    return [
+      { id: body.id, project: body.project, updated_at: body.updated_at },
+    ];
   };
-  const result = await saveSnapshotSafely(p, session, request, (previous) => previous === null, () => now);
+  const result = await saveSnapshotSafely(
+    p,
+    session,
+    request,
+    (previous) => previous === null,
+    () => now,
+  );
   assert.equal(result.status, "saved");
   assert.equal(calls[1].options.method, "POST");
   assert.equal(calls[1].options.headers.Prefer, "return=representation");
@@ -58,17 +76,47 @@ test("existing snapshot writes are conditional and conflict does not retry", asy
     calls.push({ path, options });
     return options.method ? [] : [row];
   };
-  await assert.rejects(saveSnapshotSafely(p, session, request, () => true, () => now), /changed or disappeared/);
+  await assert.rejects(
+    saveSnapshotSafely(
+      p,
+      session,
+      request,
+      () => true,
+      () => now,
+    ),
+    /changed or disappeared/,
+  );
   assert.equal(calls.length, 2);
   assert.equal(calls[1].options.method, "PATCH");
-  assert.equal(new URL("https://fixture.invalid" + calls[1].path).searchParams.get("updated_at"), "eq." + now);
-  assert.equal(JSON.parse(calls[1].options.body).updated_at, "2026-11-25T00:00:00.001Z");
+  assert.equal(
+    new URL("https://fixture.invalid" + calls[1].path).searchParams.get(
+      "updated_at",
+    ),
+    "eq." + now,
+  );
+  assert.equal(
+    JSON.parse(calls[1].options.body).updated_at,
+    "2026-11-25T00:00:00.001Z",
+  );
 });
 
 test("cancellation and invalid stored snapshots never write", async () => {
   let calls = 0;
-  const request = async () => { calls++; return [row]; };
-  assert.equal((await saveSnapshotSafely(p, session, request, () => false)).status, "cancelled");
+  const request = async () => {
+    calls++;
+    return [row];
+  };
+  assert.equal(
+    (await saveSnapshotSafely(p, session, request, () => false)).status,
+    "cancelled",
+  );
   assert.equal(calls, 1);
-  await assert.rejects(saveSnapshotSafely(p, session, async () => [{ ...row, id: "wrong" }], () => true));
+  await assert.rejects(
+    saveSnapshotSafely(
+      p,
+      session,
+      async () => [{ ...row, id: "wrong" }],
+      () => true,
+    ),
+  );
 });
