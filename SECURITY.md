@@ -11,10 +11,10 @@ A verified private security reporting channel and responsible operator contact m
 ## Controls and limitations
 
 - Verified Supabase sessions for hosted APIs, owner-only snapshot RLS and bounded request/response bodies.
-- Same-origin checks, restricted custom gateway DNS/HTTPS egress, exact production allowlist and no redirects.
+- Same-origin checks, restricted custom gateway DNS/HTTPS egress, exact hosted allowlist and no redirects.
 - Best-effort secret redaction on selected writes and exports; do not rely on it to detect all credential formats. Emergency original backup is intentionally unredacted after confirmation.
 - CSP with inline hydration exception, HSTS over HTTPS, COOP, frame denial, nosniff and referrer/permissions restrictions. Inline script execution is not fully prohibited.
-- Optional distributed rate limiting; fallback is instance-local. Configure production abuse controls and verify real Redis before launch.
+- Production requires distributed rate limiting; preview fallback is instance-local. Configure production abuse controls and verify real Redis before launch.
 - No persisted provider keys or GitHub tokens by the application; access/refresh tokens stay in browser memory. Never use a Supabase service-role key client-side.
 - Lockfile, read-only CI permissions, pinned actions, weekly Dependabot and production dependency audit.
 

@@ -47,6 +47,8 @@ test("custom production host exact allowlist and auth verification", async () =>
   const env = {
     VERCEL_ENV: "production",
     VIBEFORGE_CUSTOM_HOSTS: "gateway.example",
+    UPSTASH_REDIS_REST_URL: "https://redis.example",
+    UPSTASH_REDIS_REST_TOKEN: "fixture-token",
     NEXT_PUBLIC_SUPABASE_URL: "https://abc.supabase.co",
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_test",
   };
@@ -60,6 +62,10 @@ test("custom production host exact allowlist and auth verification", async () =>
     url: "https://gateway.example/v1",
     env,
     fetcher: async (url, opts) => {
+      if (url === "https://redis.example/") {
+        assert.equal(opts.headers.Authorization, "Bearer fixture-token");
+        return Response.json({ result: 1 });
+      }
       assert.equal(url, "https://abc.supabase.co/auth/v1/user");
       assert.equal(opts.headers.Authorization, "Bearer a.b.c");
       return Response.json({ id: "test-user" });
@@ -95,4 +101,44 @@ test("Next loopback normalization accepts only the actual matching host", () => 
     local("https://evil.example", "evil.example", "https://app.example/api/ci"),
   ])
     assert.equal(sameOrigin(r), false);
+});
+
+test("preview custom gateways require an explicit exact hostname", async () => {
+  const env = { VERCEL_ENV: "preview" };
+  await assert.rejects(
+    guard(req(), "blueprint", {
+      custom: true,
+      url: "https://gateway.example/v1",
+      env,
+    }),
+    (e) => e.status === 403,
+  );
+  await assert.rejects(
+    guard(req(), "blueprint", {
+      custom: true,
+      url: "https://gateway.example/v1",
+      env: { ...env, VIBEFORGE_CUSTOM_HOSTS: "gateway.example" },
+    }),
+    (e) => e.status === 401,
+  );
+});
+
+test("production verified session fails closed when Redis is absent", async () => {
+  const env = {
+    VERCEL_ENV: "production",
+    NEXT_PUBLIC_SUPABASE_URL: "https://abc.supabase.co",
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_fixture",
+  };
+  let calls = 0;
+  await assert.rejects(
+    guard(req({ "x-vibeforge-session": "a.b.c" }), "ci", {
+      env,
+      fetcher: async () => {
+        calls++;
+        return Response.json({ id: "fixture-rc3" });
+      },
+    }),
+    (e) => e.status === 503,
+  );
+  assert.equal(calls, 1);
 });

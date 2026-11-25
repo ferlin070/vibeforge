@@ -22,7 +22,7 @@ Example body (synthetic project, no credential):
 }
 ```
 
-Provider IDs: openai, anthropic, gemini, deepseek, openrouter, custom-openai, custom-anthropic. Model names are examples, not verified availability. Optional project.repositoryContext is limited to 8,000 characters. For custom-openai, provide custom.baseURL, custom.format (chat or responses) and optional boolean custom.jsonMode. For custom-anthropic, provide custom.baseURL and optional custom.auth (key or bearer). The base must be a trusted public HTTPS DNS hostname; no localhost/private IP, redirects or arbitrary port. In production the exact hostname must be allowlisted. See the implementation for protocol-specific constraints.
+Provider IDs: openai, anthropic, gemini, deepseek, openrouter, custom-openai, custom-anthropic. Model names are examples, not verified availability. Optional project.repositoryContext is limited to 8,000 characters. For custom-openai, provide custom.baseURL, custom.format (chat or responses) and optional boolean custom.jsonMode. For custom-anthropic, provide custom.baseURL and optional custom.auth (key or bearer). The base must be a trusted public HTTPS DNS hostname; no localhost/private IP, redirects or arbitrary port. In hosted deployments the exact hostname must be allowlisted. See the implementation for protocol-specific constraints.
 
 Success returns `{ blueprint, provider, model }`. The blueprint contains documents, assumptions, questions and tasks. Each task has id, title, description, dependencies and acceptance. Generated output is validated and known secret patterns rejected. The client displays a candidate before explicit application.
 
@@ -44,4 +44,4 @@ Errors contain `error` and, for categorized AI failures, sometimes `code`. 400 i
 
 ## Rate limits
 
-Verified-account limits: AI 6/minute, token-backed repository and CI 12/minute each, no-token GitHub 2/minute shared across both routes. GitHub enforces its own upstream quota. Optional Redis uses shared fixed windows; absent configuration uses per-instance memory. Partial Redis configuration or failure returns an error rather than bypassing the limiter. These controls are not a complete public abuse-prevention system.
+Verified-account limits: AI 6/minute, token-backed repository and CI 12/minute each, no-token GitHub 2/minute shared across both routes. GitHub enforces its own upstream quota. Redis uses shared fixed windows; production requires both variables, while preview may use per-instance memory. Partial Redis configuration or failure returns an error rather than bypassing the limiter. These controls are not a complete public abuse-prevention system.

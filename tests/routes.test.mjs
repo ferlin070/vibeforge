@@ -278,3 +278,14 @@ test("optional REST rate limiter uses atomic EVAL and denies failures", async ()
     }),
   );
 });
+
+test("distributed limiter is mandatory only in Vercel production", async () => {
+  await assert.rejects(
+    rateLimit("rc3-production", 2, { env: { VERCEL_ENV: "production" } }),
+    /required/,
+  );
+  assert.equal(
+    await rateLimit("rc3-preview", 2, { env: { VERCEL_ENV: "preview" } }),
+    true,
+  );
+});

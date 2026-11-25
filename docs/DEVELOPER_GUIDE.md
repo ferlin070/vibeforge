@@ -4,7 +4,7 @@
 
 Use Node.js 22 and `npm ci`. Run `npm run dev` for development, `npm run build` and `npm start` for a production-mode local build. Use `.env.local` for environment values; never commit it. Manual planning works without cloud configuration.
 
-Hosted API routes require a verified Supabase session. Plain local development without VERCEL_ENV may bypass authentication for non-custom routes unless VIBEFORGE_REQUIRE_AUTH=1. Custom routes always require sign-in; enabling VIBEFORGE_REQUIRE_AUTH also enables the production custom-host allowlist.
+Hosted API routes require a verified Supabase session. Plain local development without VERCEL_ENV may bypass authentication for non-custom routes unless VIBEFORGE_REQUIRE_AUTH=1. Custom routes always require sign-in; enabling VIBEFORGE_REQUIRE_AUTH also enables the hosted custom-host allowlist.
 
 ## Conventions
 

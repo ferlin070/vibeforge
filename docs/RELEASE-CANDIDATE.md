@@ -20,3 +20,7 @@
 - [ ] Explicit owner approval for production deployment, domain, metadata/robots configuration and final package release version.
 
 The package remains 1.0.0-rc.1 during the audit. A passing CI check is not an authorization to merge or deploy. Never mark unrun tests as passed. See [runbook](DEPLOYMENT_RUNBOOK.md).
+
+## RC3 readiness increment
+
+See [RC3 readiness](RC3-READINESS.md). The new candidate pins Node.js 22.x and requires distributed rate limiting for production API access. Hosted custom gateways require explicit hostname approval. Production remains blocked until live integration and operator gates are satisfied.

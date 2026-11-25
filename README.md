@@ -21,7 +21,7 @@ VibeForge does not execute agents, run repository code, independently certify re
 
 ## Quick start
 
-Requirements: Node.js 22 (recommended), npm, and a modern browser. No account is required for manual local planning.
+Requirements: Node.js 22.x, npm, and a modern browser. No account is required for manual local planning.
 
 ```bash
 nvm use
@@ -49,7 +49,7 @@ The committed npm lockfile is required. CI runs these checks and the Chromium br
 
 The application uses Next.js App Router, React, JavaScript, CSS, Node.js route handlers, browser localStorage and optional Supabase Auth/PostgREST snapshots. No TypeScript, Tailwind, agent execution service or durable job queue is implemented.
 
-Copy `.env.example` to `.env.local` for optional cloud configuration. Use the public Supabase publishable key, never a service-role key. Do not commit credentials. Hosted API calls require verified sessions; custom production hosts require an explicit allowlist. Configure both Upstash Redis variables for distributed rate limiting; otherwise the fallback is per-instance only.
+Copy `.env.example` to `.env.local` for optional cloud configuration. Use the public Supabase publishable key, never a service-role key. Do not commit credentials. Hosted API calls require verified sessions and custom gateway hosts require an explicit allowlist. Both Upstash Redis variables are required for production API access; preview may use per-instance rate limiting. See [RC3 readiness](docs/RC3-READINESS.md).
 
 - [Architecture and data flows](docs/ARCHITECTURE.md)
 - [Developer guide](docs/DEVELOPER_GUIDE.md)
