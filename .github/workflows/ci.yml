@@ -1,7 +1,7 @@
 name: MVP checks
 on:
   push:
-    branches: [main]
+    branches: [main, beta/rc12-hardening]
   pull_request:
 permissions:
   contents: read
