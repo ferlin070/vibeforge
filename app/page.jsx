@@ -1,6 +1,6 @@
 "use client";
 import { redactText, redactExportText, hasSecret } from "../lib/redact.mjs";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Studio from "./studio.jsx";
 import Cloud from "./cloud.jsx";
 import Repository from "./repository.jsx";
@@ -8,7 +8,12 @@ import ContextManager from "./context.jsx";
 import Mission from "./mission.jsx";
 import Quality from "./quality.jsx";
 import Guide from "./guide.jsx";
-import { applyProjectPatch, impactOf, impactMessage } from "../lib/mission.mjs";
+import {
+  applyProjectPatch,
+  impactOf,
+  impactMessage,
+  requiresImpactConfirmation,
+} from "../lib/mission.mjs";
 import { agents } from "../lib/context.mjs";
 import { stages, makeBrief, makePrompt } from "../lib/planner.mjs";
 const empty = {
@@ -49,6 +54,10 @@ export default function Home() {
     [session, setSession] = useState(null),
     [query, setQuery] = useState(""),
     [filter, setFilter] = useState("all");
+  const latestProjects = useRef(projects);
+  useEffect(() => {
+    latestProjects.current = projects;
+  }, [projects]);
   // Browser-only hydration and persistence errors must update state after mount.
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
@@ -142,10 +151,16 @@ export default function Home() {
   };
   const updateActive = (patch) => {
     if (!p) return false;
-    const impact = impactOf(p, patch);
-    if (impact.invalidates && !confirm(impactMessage(impact))) return false;
+    const current = latestProjects.current.find((x) => x.id === p.id);
+    if (current !== p) {
+      setNotice("Project changed during this operation. Please try again.");
+      return false;
+    }
+    const impact = impactOf(current, patch);
+    if (requiresImpactConfirmation(impact) && !confirm(impactMessage(impact)))
+      return false;
     setProjects((xs) =>
-      xs.map((x) => (x.id === p.id ? applyProjectPatch(x, patch) : x)),
+      xs.map((x) => (x === current ? applyProjectPatch(x, patch) : x)),
     );
     return true;
   };

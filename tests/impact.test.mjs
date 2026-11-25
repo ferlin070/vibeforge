@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { starterBlueprint } from "../lib/blueprint.mjs";
 import { newMemory } from "../lib/context.mjs";
 import { addBug, changeBug, readiness } from "../lib/quality.mjs";
-import { impactOf, impactMessage, applyProjectPatch } from "../lib/mission.mjs";
+import { impactOf, impactMessage, applyProjectPatch, requiresImpactConfirmation } from "../lib/mission.mjs";
 
 const p = {
   name: "Fixture",
@@ -137,4 +137,12 @@ test("impact preview is pure and a cancelled operation leaves the original uncha
   assert.equal(impact.invalidates, true);
   assert.match(impactMessage(impact), /Cancel to keep your existing work/);
   assert.equal(JSON.stringify(p), before);
+});
+
+test("confirmation is required only for actual work at risk or material memory", () => {
+  assert.equal(requiresImpactConfirmation(impactOf(p, { document: "changed" })), true);
+  assert.equal(requiresImpactConfirmation(impactOf(p, { agent: "Cursor" })), false);
+  const empty = { name: "Draft", memory: [] };
+  assert.equal(requiresImpactConfirmation(impactOf(empty, { document: "draft" })), false);
+  assert.equal(requiresImpactConfirmation(impactOf(empty, { memory: [{ category: "Decision", title: "Scope" }] })), true);
 });

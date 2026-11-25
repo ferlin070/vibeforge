@@ -49,12 +49,13 @@ export default function Quality({
     g = readiness(p),
     bug = q.bugs.find((x) => x.id === bugId) || q.bugs[0],
     analysis = analyzeLog(details);
-  const save = (fn) => {
+  const save = (fn, onSaved) => {
     try {
       if (!update({ quality: fn() })) {
         setMsg("Change cancelled. Existing release evidence retained.");
         return;
       }
+      onSaved?.();
       setMsg("Saved locally.");
     } catch (e) {
       setMsg(e.message);
@@ -228,17 +229,19 @@ export default function Quality({
             <button
               disabled={!title.trim() || !details.trim()}
               onClick={() =>
-                save(() => {
-                  const v = addBug(
-                    p,
-                    { title, severity, details, task },
-                    crypto.randomUUID(),
-                    new Date().toISOString(),
-                  );
-                  setTitle("");
-                  setDetails("");
-                  return v;
-                })
+                save(
+                  () =>
+                    addBug(
+                      p,
+                      { title, severity, details, task },
+                      crypto.randomUUID(),
+                      new Date().toISOString(),
+                    ),
+                  () => {
+                    setTitle("");
+                    setDetails("");
+                  },
+                )
               }
             >
               Create bug
@@ -457,16 +460,11 @@ export default function Quality({
             <button
               disabled={!checkNote.trim()}
               onClick={() =>
-                save(() => {
-                  const v = saveCheck(
-                    p,
-                    check,
-                    checkNote,
-                    new Date().toISOString(),
-                  );
-                  setCheckNote("");
-                  return v;
-                })
+                save(
+                  () =>
+                    saveCheck(p, check, checkNote, new Date().toISOString()),
+                  () => setCheckNote(""),
+                )
               }
             >
               Record check
