@@ -203,7 +203,14 @@ test("responsive visual audit captures local synthetic screens", async ({
   const results = [];
   for (const width of [390, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 });
-    for (const view of ["overview", "studio", "cloud", "mission", "quality"]) {
+    for (const view of [
+      "overview",
+      "studio",
+      "cloud",
+      "mission",
+      "quality",
+      "agents",
+    ]) {
       await page.goto("/?view=" + view);
       await expect(page.locator("#main-content")).toBeVisible();
       await expect(page.locator("#main-content h1").first()).toBeVisible();
@@ -240,7 +247,7 @@ test("responsive visual audit captures local synthetic screens", async ({
     }
   }
   console.log("VF_LAYOUT " + JSON.stringify(results));
-  expect(results).toHaveLength(15);
+  expect(results).toHaveLength(18);
   expect(results.filter((result) => result.overflow)).toEqual([]);
 });
 
