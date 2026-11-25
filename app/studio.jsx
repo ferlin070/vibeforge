@@ -7,6 +7,7 @@ import {
   hasSecret,
 } from "../lib/redact.mjs";
 import { useState, useEffect } from "react";
+import Architect from "./architect.jsx";
 import { scoreBlueprint } from "../lib/blueprint-quality.mjs";
 import {
   sections,
@@ -433,6 +434,7 @@ export default function Studio({
           {msg}
         </p>
       </section>
+      <Architect key={p.id} project={p} />
       {candidate && (
         <section className="panel studioPanel">
           <h2>Generated candidate — not applied</h2>
