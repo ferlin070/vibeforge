@@ -143,6 +143,9 @@ test("mocked AI failure and candidate review preserve existing work until apply"
     idea: "Build a revised booking workspace",
   });
   await page.route(origin + "/api/blueprint", async (route) => {
+    const request = route.request().postDataJSON();
+    expect(request.provider).toBe("gemini");
+    expect(request.model).toBe("gemini-2.5-flash");
     calls++;
     await route.fulfill(
       calls === 1
@@ -173,7 +176,8 @@ test("mocked AI failure and candidate review preserve existing work until apply"
     .locator(".sidebar")
     .getByRole("button", { name: "AI blueprint", exact: true })
     .click();
-  const key = page.getByLabel(/API key/);
+  const key = page.getByLabel("Google Gemini API key");
+  await expect(page.getByLabel("Model ID")).toHaveValue("gemini-2.5-flash");
   const generate = page.getByRole("button", { name: "Generate with AI ✦" });
   await key.fill("fixture-key-1234");
   accept(page);
