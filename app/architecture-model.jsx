@@ -46,7 +46,10 @@ export default function ArchitectureModel() {
     setMessage("Draft export requested.");
   };
   return (
-    <section className="panel studioPanel" aria-label="Visual Architecture Studio">
+    <section
+      className="panel studioPanel"
+      aria-label="Visual Architecture Studio"
+    >
       <div className="eyebrow">RC9 · DESIGN DRAFT</div>
       <h2>Visual Architecture Studio</h2>
       <p>
@@ -57,20 +60,38 @@ export default function ArchitectureModel() {
       <div className="twocol">
         <label>
           Entity name
-          <input value={entity} maxLength={63} onChange={(e) => setEntity(e.target.value)} placeholder="Booking" />
+          <input
+            value={entity}
+            maxLength={63}
+            onChange={(e) => setEntity(e.target.value)}
+            placeholder="Booking"
+          />
         </label>
         <label>
           Fields (name:type, comma separated)
-          <input value={fields} maxLength={1800} onChange={(e) => setFields(e.target.value)} placeholder="id:uuid, status:text" />
+          <input
+            value={fields}
+            maxLength={1800}
+            onChange={(e) => setFields(e.target.value)}
+            placeholder="id:uuid, status:text"
+          />
         </label>
       </div>
       <small>Types: uuid, text, integer, boolean, timestamp, json.</small>
-      <button className="ghost" onClick={() => {
-        if (change(() => addEntity(model, entity, fields), "Entity added to draft.")) {
-          setEntity("");
-          setFields("");
-        }
-      }}>
+      <button
+        className="ghost"
+        onClick={() => {
+          if (
+            change(
+              () => addEntity(model, entity, fields),
+              "Entity added to draft.",
+            )
+          ) {
+            setEntity("");
+            setFields("");
+          }
+        }}
+      >
         Add entity
       </button>
       <div className="architecture-entities">
@@ -85,13 +106,20 @@ export default function ArchitectureModel() {
                 </div>
               ))}
             </dl>
-            <button className="ghost" onClick={() => {
-              if (confirm("Remove this entity and its draft relationships?")) {
-                setModel(removeEntity(model, item.name));
-                setFrom("");
-                setTo("");
-              }
-            }}>Remove {item.name}</button>
+            <button
+              className="ghost"
+              onClick={() => {
+                if (
+                  confirm("Remove this entity and its draft relationships?")
+                ) {
+                  setModel(removeEntity(model, item.name));
+                  setFrom("");
+                  setTo("");
+                }
+              }}
+            >
+              Remove {item.name}
+            </button>
           </article>
         ))}
       </div>
@@ -101,28 +129,60 @@ export default function ArchitectureModel() {
           From entity
           <select value={from} onChange={(e) => setFrom(e.target.value)}>
             <option value="">Select entity</option>
-            {model.entities.map((item) => <option key={item.name}>{item.name}</option>)}
+            {model.entities.map((item) => (
+              <option key={item.name}>{item.name}</option>
+            ))}
           </select>
         </label>
         <label>
           To entity
           <select value={to} onChange={(e) => setTo(e.target.value)}>
             <option value="">Select entity</option>
-            {model.entities.map((item) => <option key={item.name}>{item.name}</option>)}
+            {model.entities.map((item) => (
+              <option key={item.name}>{item.name}</option>
+            ))}
           </select>
         </label>
       </div>
       <label>
         Relationship cardinality
         <select value={kind} onChange={(e) => setKind(e.target.value)}>
-          {relationKinds.map((item) => <option key={item}>{item}</option>)}
+          {relationKinds.map((item) => (
+            <option key={item}>{item}</option>
+          ))}
         </select>
       </label>
-      <button className="ghost" disabled={model.entities.length < 2} onClick={() => change(() => addRelation(model, from, to, kind), "Relationship added.")}>Add relationship</button>
+      <button
+        className="ghost"
+        disabled={model.entities.length < 2}
+        onClick={() =>
+          change(
+            () => addRelation(model, from, to, kind),
+            "Relationship added.",
+          )
+        }
+      >
+        Add relationship
+      </button>
       {model.relations.map((item, index) => (
         <article className="taskrow" key={item.from + ":" + item.to}>
-          <div><strong>{item.from} → {item.to}</strong><p>{item.kind}</p></div>
-          <button className="ghost" onClick={() => setModel({ ...model, relations: model.relations.filter((_, i) => i !== index) })}>Remove relationship</button>
+          <div>
+            <strong>
+              {item.from} → {item.to}
+            </strong>
+            <p>{item.kind}</p>
+          </div>
+          <button
+            className="ghost"
+            onClick={() =>
+              setModel({
+                ...model,
+                relations: model.relations.filter((_, i) => i !== index),
+              })
+            }
+          >
+            Remove relationship
+          </button>
         </article>
       ))}
       <h3>API contracts</h3>
@@ -130,12 +190,19 @@ export default function ArchitectureModel() {
         <label>
           HTTP method
           <select value={method} onChange={(e) => setMethod(e.target.value)}>
-            {httpMethods.map((item) => <option key={item}>{item}</option>)}
+            {httpMethods.map((item) => (
+              <option key={item}>{item}</option>
+            ))}
           </select>
         </label>
         <label>
           Endpoint path
-          <input value={path} maxLength={160} onChange={(e) => setPath(e.target.value)} placeholder="/api/bookings/{id}" />
+          <input
+            value={path}
+            maxLength={160}
+            onChange={(e) => setPath(e.target.value)}
+            placeholder="/api/bookings/{id}"
+          />
         </label>
         <label>
           Proposed access
@@ -146,26 +213,63 @@ export default function ArchitectureModel() {
         </label>
         <label>
           Endpoint purpose
-          <input value={purpose} maxLength={300} onChange={(e) => setPurpose(e.target.value)} placeholder="Retrieve booking for current owner" />
+          <input
+            value={purpose}
+            maxLength={300}
+            onChange={(e) => setPurpose(e.target.value)}
+            placeholder="Retrieve booking for current owner"
+          />
         </label>
       </div>
-      <button className="ghost" onClick={() => {
-        if (change(() => addEndpoint(model, method, path, access, purpose), "API contract added.")) {
-          setPath("");
-          setPurpose("");
-        }
-      }}>Add endpoint</button>
+      <button
+        className="ghost"
+        onClick={() => {
+          if (
+            change(
+              () => addEndpoint(model, method, path, access, purpose),
+              "API contract added.",
+            )
+          ) {
+            setPath("");
+            setPurpose("");
+          }
+        }}
+      >
+        Add endpoint
+      </button>
       {model.endpoints.map((item, index) => (
         <article className="taskrow" key={item.method + ":" + item.path}>
-          <div><strong>{item.method} {item.path}</strong><p>{item.access} · {item.purpose}</p></div>
-          <button className="ghost" onClick={() => setModel({ ...model, endpoints: model.endpoints.filter((_, i) => i !== index) })}>Remove endpoint</button>
+          <div>
+            <strong>
+              {item.method} {item.path}
+            </strong>
+            <p>
+              {item.access} · {item.purpose}
+            </p>
+          </div>
+          <button
+            className="ghost"
+            onClick={() =>
+              setModel({
+                ...model,
+                endpoints: model.endpoints.filter((_, i) => i !== index),
+              })
+            }
+          >
+            Remove endpoint
+          </button>
         </article>
       ))}
       <p>
         Review primary and foreign keys, authorization, validation, ownership,
         retention and failure behavior before implementation. No SQL is run.
       </p>
-      <button onClick={download} disabled={!model.entities.length && !model.endpoints.length}>Export architecture model</button>
+      <button
+        onClick={download}
+        disabled={!model.entities.length && !model.endpoints.length}
+      >
+        Export architecture model
+      </button>
       {message && <p role="status">{message}</p>}
     </section>
   );
