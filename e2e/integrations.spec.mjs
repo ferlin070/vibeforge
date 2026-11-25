@@ -486,3 +486,29 @@ test("architecture draft exports entities and contracts without changing project
   expect((await stored(page))[0].blueprint).toEqual(approved.blueprint);
   expect((await stored(page))[0].blueprintApproved).toBe(true);
 });
+
+test("template library creates a separate unapproved project through the wizard", async ({
+  page,
+}) => {
+  await page.goto("/?view=templates");
+  await page.getByLabel("Search templates").fill("homestay");
+  await page.getByLabel("Template category").selectOption("Hospitality");
+  await expect(
+    page.getByRole("heading", { name: "Homestay Booking" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Use template" }).click();
+  await expect(page.getByLabel("Project name")).toHaveValue("Homestay Booking");
+  await page.getByRole("button", { name: "Continue →" }).click();
+  await expect(page.getByLabel("What do you want to build?")).toHaveValue(
+    /room availability/,
+  );
+  await page.getByRole("button", { name: "Continue →" }).click();
+  await page.getByLabel("Preferred coding agent").selectOption("OpenCode");
+  await page.getByRole("button", { name: "Create project", exact: true }).click();
+  await expect.poll(async () => (await stored(page)).length).toBe(2);
+  const projects = await stored(page);
+  expect(projects[0].name).toBe("Homestay Booking");
+  expect(projects[0].agent).toBe("OpenCode");
+  expect(projects[0].blueprintApproved).toBeFalsy();
+  expect(projects[1].blueprint).toEqual(approved.blueprint);
+});
