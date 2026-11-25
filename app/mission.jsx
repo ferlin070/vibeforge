@@ -1,6 +1,8 @@
 "use client";
 import { useState } from "react";
 import { agents } from "../lib/context.mjs";
+import { localHandoffFiles } from "../lib/local-handoff.mjs";
+import { makeZip } from "../lib/zip.mjs";
 import {
   roles,
   missionBoard,
@@ -76,6 +78,28 @@ export default function Mission({
       a.click();
       setTimeout(() => URL.revokeObjectURL(u), 1000);
       setMsg("Export requested.");
+    } catch (e) {
+      setMsg(e.message);
+    }
+  };
+  const saveLocalPackage = () => {
+    try {
+      const files = localHandoffFiles(p, t.id);
+      if (
+        !confirm(
+          "Export a local task package? Review private project content before sharing. No agent will execute.",
+        )
+      )
+        return;
+      const url = URL.createObjectURL(
+        new Blob([makeZip(files)], { type: "application/zip" }),
+      );
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = t.id + "-local-agent.zip";
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setMsg("Local package export requested. No execution or handoff recorded.");
     } catch (e) {
       setMsg(e.message);
     }
@@ -274,6 +298,17 @@ export default function Mission({
           >
             Export handoff
           </button>
+          <button
+            className="ghost"
+            disabled={!actionable || !t.assignment}
+            onClick={saveLocalPackage}
+          >
+            Export local agent package
+          </button>
+          <small>
+            Requires an exact GitHub branch and commit scan. The ZIP includes
+            an offline Git preflight, task prompt and blank report template.
+          </small>
           <button
             disabled={!actionable || !t.assignment || t.assignment.handedOff}
             onClick={() => {
