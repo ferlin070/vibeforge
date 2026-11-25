@@ -45,3 +45,7 @@ Errors contain `error` and, for categorized AI failures, sometimes `code`. 400 i
 ## Rate limits
 
 Verified-account limits: AI 6/minute, token-backed repository and CI 12/minute each, no-token GitHub 2/minute shared across both routes. GitHub enforces its own upstream quota. Redis uses shared fixed windows; production requires both variables, while preview may use per-instance memory. Partial Redis configuration or failure returns an error rather than bypassing the limiter. These controls are not a complete public abuse-prevention system.
+
+### RC5 branch selection
+
+`POST /api/repository` accepts optional `branch` (portable branch name, maximum 255 characters). Omit or pass an empty string for the default branch. The server resolves the exact `refs/heads/` reference, verifies the commit SHA and pins the manifest and tree to that commit. A missing branch returns 404. No tags, commits by user input, source execution or writes.

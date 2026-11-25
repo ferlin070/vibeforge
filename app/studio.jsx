@@ -40,6 +40,7 @@ export default function Studio({
     [busy, setBusy] = useState(false),
     [msg, setMsg] = useState(""),
     [section, setSection] = useState("brief"),
+    [reading, setReading] = useState(false),
     [taskId, setTaskId] = useState(""),
     [report, setReport] = useState(""),
     [candidate, setCandidate] = useState(null);
@@ -619,21 +620,41 @@ export default function Studio({
                 ))}
               </select>
             </label>
-            <textarea
-              disabled={busy}
-              rows={18}
-              className="editor"
-              value={b.documents[section]}
-              onChange={(e) =>
-                update({
-                  blueprint: {
-                    ...b,
-                    documents: { ...b.documents, [section]: e.target.value },
-                  },
-                })
-              }
-              aria-label="Specification document"
-            />
+            <div className="actions">
+              <button
+                className={reading ? "ghost" : ""}
+                aria-pressed={!reading}
+                onClick={() => setReading(false)}
+              >
+                Edit Markdown
+              </button>
+              <button
+                className={reading ? "" : "ghost"}
+                aria-pressed={reading}
+                onClick={() => setReading(true)}
+              >
+                Reading view
+              </button>
+            </div>
+            {reading ? (
+              <DocumentReader text={b.documents[section]} />
+            ) : (
+              <textarea
+                disabled={busy}
+                rows={18}
+                className="editor"
+                value={b.documents[section]}
+                onChange={(e) =>
+                  update({
+                    blueprint: {
+                      ...b,
+                      documents: { ...b.documents, [section]: e.target.value },
+                    },
+                  })
+                }
+                aria-label="Specification document"
+              />
+            )}
             <small>
               Scope edits require impact confirmation before saving and clearing
               prior work.
@@ -769,9 +790,10 @@ function BlueprintScore({ blueprint }) {
         readiness.
       </small>
       {q.breakdown.map((x) => (
-        <p key={x.label}>
-          {x.label}: {x.score}/{x.max}
-        </p>
+        <div className="quality-meter" key={x.label}>
+          <span>{x.label}: {x.score}/{x.max}</span>
+          <meter min={0} max={x.max} value={x.score} aria-label={x.label} />
+        </div>
       ))}
       <p>
         {q.tracedCount}/{q.requirementCount} requirement IDs referenced in tasks
@@ -780,6 +802,30 @@ function BlueprintScore({ blueprint }) {
       {q.warnings.map((w) => (
         <p key={w}>• {w}</p>
       ))}
+      {q.taskFindings.length > 0 && (
+        <details>
+          <summary>Acceptance criteria to review ({q.taskFindings.length} tasks)</summary>
+          {q.taskFindings.map((task) => (
+            <p key={task.id}>
+              {task.id}: {task.observable}/{task.criteria} criteria with observable signals.
+            </p>
+          ))}
+        </details>
+      )}
     </div>
+  );
+}
+
+// Render a text-only reading mode; never interpret AI-generated HTML or links.
+function DocumentReader({ text }) {
+  return (
+    <article className="document-reader" aria-label="Document reading view">
+      {text.split("\n").map((line, i) => {
+        const heading = line.match(/^#{1,6}\s+(.+)$/);
+        if (heading) return <h3 key={i}>{heading[1]}</h3>;
+        if (!line.trim()) return <div className="document-space" key={i} />;
+        return <div className="document-line" key={i}>{line}</div>;
+      })}
+    </article>
   );
 }

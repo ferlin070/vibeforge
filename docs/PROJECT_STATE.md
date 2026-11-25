@@ -22,3 +22,7 @@ All ten audit phases have been implemented and verified at the runtime baseline 
 - No autonomous agent runtime, team collaboration, billing, durable job queue, live research or automatic user-project deployment.
 
 The remaining live-service and operator release gates require completion before any public release. No deployment or database mutation is authorized by this document.
+
+## RC5 product excellence increment
+
+See [RC5 product excellence](RC5-PRODUCT-EXCELLENCE.md). Branch selection, captured-file filtering, text-only document reading, and more specific blueprint quality diagnostics are implemented without changing stored project schema.

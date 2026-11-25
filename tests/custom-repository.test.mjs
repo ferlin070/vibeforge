@@ -6,7 +6,7 @@ import {
   pinnedAddress,
 } from "../lib/custom-endpoint.mjs";
 import { makeRequest, extractOutput } from "../lib/ai-adapters.mjs";
-import { parseRepo, inventory } from "../lib/repository.mjs";
+import { parseRepo, parseBranch, inventory } from "../lib/repository.mjs";
 test("custom base paths and protocols", () => {
   assert.equal(
     endpoint("https://gateway.example.com/v1", "chat"),
@@ -114,4 +114,11 @@ test("repository normalization and honest inventory", () => {
   assert.ok(r.stack.includes("next"));
   assert.ok(!r.paths.includes(".env"));
   assert.equal(r.fileCount, 4);
+});
+
+test("branch names are portable and reject ambiguous or unsafe refs", () => {
+  assert.equal(parseBranch(undefined), "");
+  assert.equal(parseBranch("audit/rc2-phase1"), "audit/rc2-phase1");
+  for (const value of ["../main", "main?x", "main#tag", "a//b", ".hidden", "x.lock", "-main", "a/.", "a/../b", "a%2Fb", "x".repeat(256), 1])
+    assert.throws(() => parseBranch(value));
 });

@@ -1467,3 +1467,40 @@ pre {
     width: 100%;
   }
 }
+
+/* RC5 document reader and blueprint diagnostics */
+.document-reader {
+  border: 1px solid #353d51;
+  border-radius: 14px;
+  background: #101522;
+  padding: clamp(16px, 3vw, 36px);
+  margin: 14px 0;
+  color: #e5e9f5;
+  font-size: 15px;
+  line-height: 1.75;
+  overflow-wrap: anywhere;
+}
+.document-reader h3 {
+  color: #f4f1ff;
+  font-size: 19px;
+  margin: 12px 0;
+}
+.document-line {
+  white-space: pre-wrap;
+}
+.document-space {
+  height: 10px;
+}
+.quality-meter {
+  display: grid;
+  gap: 5px;
+  margin: 12px 0;
+}
+.quality-meter meter {
+  width: 100%;
+  height: 10px;
+  accent-color: #a78bfa;
+}
+.quality-meter meter::-webkit-meter-optimum-value {
+  background: #9d85f9;
+}

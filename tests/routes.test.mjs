@@ -185,6 +185,8 @@ test("successful authenticated repository and CI import", async () => {
   await authed(async (url) => {
     const u = new URL(url);
     assert.equal(u.hostname, "api.github.com");
+    if (u.pathname.includes("/git/ref/heads/"))
+      return Response.json({ ref: "refs/heads/main", object: { sha } });
     if (u.pathname.endsWith("/actions/runs"))
       return Response.json({
         workflow_runs: [
@@ -356,4 +358,41 @@ test("REST config selects complete pairs and refuses mixed credentials", () => {
   }
   const readOnly = { KV_REST_API_READ_ONLY_TOKEN: "read-only-token" };
   assert.equal(redisConfig(readOnly), null);
+});
+
+test("repository scan pins selected branch to exact commit and tree", async () => {
+  const branch = "audit/rc2-phase1";
+  const paths = [];
+  runAuthenticated = async () => {
+    const response = await repository(
+      request("repository", { repo: "owner/repo", branch }, {
+        "x-vibeforge-session": token,
+        "x-github-token": "fake_github_token",
+      }),
+    );
+    assert.equal(response.status, 200);
+    const result = (await response.json()).inventory;
+    assert.equal(result.branch, branch);
+    assert.equal(result.sha, sha);
+    assert.equal(result.signals.lockfile, true);
+  };
+  await authed(async (url) => {
+    const u = new URL(url);
+    paths.push(u.pathname + u.search);
+    assert.equal(u.hostname, "api.github.com");
+    if (u.pathname.includes("/git/ref/heads/")) {
+      assert.equal(decodeURIComponent(u.pathname.split("/git/ref/heads/")[1]), branch);
+      return Response.json({ ref: "refs/heads/" + branch, object: { sha } });
+    }
+    if (u.pathname.includes("/commits/"))
+      return Response.json({ sha, commit: { tree: { sha } } });
+    if (u.pathname.includes("/git/trees/"))
+      return Response.json({ tree: [{ path: "package-lock.json", type: "blob" }] });
+    if (u.pathname.includes("/contents/")) {
+      assert.equal(u.searchParams.get("ref"), sha);
+      return new Response("", { status: 404 });
+    }
+    return Response.json({ full_name: "owner/repo", default_branch: "main" });
+  });
+  assert.equal(paths.length, 5);
 });

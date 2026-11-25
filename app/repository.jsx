@@ -11,6 +11,8 @@ export default function Repository({
   session,
 }) {
   const [repo, setRepo] = useState(project?.repository?.repo || ""),
+    [branch, setBranch] = useState(project?.repository?.branch || ""),
+    [fileSearch, setFileSearch] = useState(""),
     [token, setToken] = useState(""),
     [busy, setBusy] = useState(false),
     [msg, setMsg] = useState("");
@@ -23,6 +25,9 @@ export default function Repository({
       </section>
     );
   const result = project.repository;
+  const visiblePaths = (result?.paths || []).filter((path) =>
+    path.toLowerCase().includes(fileSearch.trim().toLowerCase()),
+  );
   const scan = async () => {
     if (!session && process.env.NODE_ENV !== "development") {
       setMsg("Sign in via Cloud account before scanning a repository.");
@@ -38,7 +43,7 @@ export default function Repository({
           ...(session?.token ? { "x-vibeforge-session": session.token } : {}),
           ...(token.trim() ? { "x-github-token": token.trim() } : {}),
         },
-        body: JSON.stringify({ repo }),
+        body: JSON.stringify({ repo, branch: branch.trim() }),
       });
       const d = await r.json();
       if (!r.ok) throw Error(d.error);
@@ -46,6 +51,7 @@ export default function Repository({
         setMsg("Replacement cancelled. Existing inventory retained.");
         return;
       }
+      setFileSearch("");
       setMsg(
         "Inventory saved locally. Review evidence before generating a blueprint.",
       );
@@ -100,6 +106,20 @@ export default function Repository({
             disabled={busy}
           />
         </label>
+        <label>
+          Branch name (optional)
+          <input
+            value={branch}
+            onChange={(e) => setBranch(e.target.value)}
+            placeholder="Default branch, or e.g. audit/rc2-phase1"
+            maxLength={255}
+            disabled={busy}
+          />
+        </label>
+        <small>
+          Leave blank for the repository default. The scan resolves an exact branch
+          to a commit before reading the tree.
+        </small>
         <label>
           Optional GitHub read-only token for private repos
           <input
@@ -164,7 +184,16 @@ export default function Repository({
             <small>
               Up to 300 paths, sensitive filename patterns excluded.
             </small>
-            <pre>{result.paths.join("\n")}</pre>
+            <label>
+              Search captured files
+              <input
+                value={fileSearch}
+                onChange={(e) => setFileSearch(e.target.value)}
+                placeholder="Search by filename or folder"
+              />
+            </label>
+            <p role="status">{visiblePaths.length} of {result.paths.length} captured paths</p>
+            <pre>{visiblePaths.join("\n") || "No matching files."}</pre>
           </section>
         </>
       )}

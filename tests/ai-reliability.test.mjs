@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { starterBlueprint } from "../lib/blueprint.mjs";
 import {
   scoreBlueprint,
+  observableCriterion,
   validateGeneratedBlueprint,
 } from "../lib/blueprint-quality.mjs";
 import {
@@ -231,4 +232,17 @@ test("route returns safe failure, no automatic retry, and malformed JSON does no
   } finally {
     globalThis.fetch = old;
   }
+});
+
+test("quality diagnostics flag vague acceptance and undeclared references", () => {
+  assert.equal(observableCriterion("FR-001 must be implemented"), false);
+  assert.equal(observableCriterion("Test the feature"), false);
+  assert.equal(observableCriterion("Unauthorized request returns HTTP 403"), true);
+  const x = structuredClone(b);
+  x.documents.prd = "FR-001";
+  x.tasks[0].description = "FR-001 and FR-999";
+  x.tasks[0].acceptance = ["FR-001 must work"];
+  const q = scoreBlueprint(x);
+  assert.deepEqual(q.unknownReferences, ["FR-999"]);
+  assert.ok(q.taskFindings.some((t) => t.id === "TASK-001" && t.observable === 0));
 });

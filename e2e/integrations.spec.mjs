@@ -232,3 +232,16 @@ test("responsive visual audit captures local synthetic screens", async ({
   expect(results).toHaveLength(15);
   expect(results.filter((result) => result.overflow)).toEqual([]);
 });
+
+test("document reading view preserves text and returns to editor", async ({ page }) => {
+  await page.goto("/?view=studio");
+  const editor = page.getByLabel("Specification document");
+  await expect(editor).toBeVisible();
+  const original = await editor.inputValue();
+  await page.getByRole("button", { name: "Reading view" }).click();
+  const reader = page.getByRole("article", { name: "Document reading view" });
+  await expect(reader).toBeVisible();
+  await expect(reader).toContainText("Project brief");
+  await page.getByRole("button", { name: "Edit Markdown" }).click();
+  await expect(editor).toHaveValue(original);
+});
