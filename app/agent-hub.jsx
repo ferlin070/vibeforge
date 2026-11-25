@@ -2,6 +2,11 @@
 
 import { useState } from "react";
 import { agents, agentGuidance } from "../lib/context.mjs";
+import {
+  agentGuides,
+  guideCheckedOn,
+  modelColumns,
+} from "../lib/agent-guides.mjs";
 
 const categories = {
   Universal: "Universal",
@@ -132,6 +137,66 @@ export default function AgentHub({ project, update, go }) {
           </article>
         )}
       </div>
+      <section className="panel studioPanel">
+        <h2>Installation guides</h2>
+        <p>
+          Five priority agents have source-backed setup references. For other
+          agents, consult their official documentation before installing.
+        </p>
+        <div className="tiles">
+          {agentGuides.map((item) => (
+            <article key={item.name}>
+              <strong>{item.name}</strong>
+              <p>{item.setup}</p>
+              <a href={item.install} target="_blank" rel="noopener noreferrer">
+                Official installation guide ↗
+              </a>
+              <p>
+                <a
+                  href={item.providers}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Provider configuration ↗
+                </a>
+              </p>
+            </article>
+          ))}
+        </div>
+      </section>
+      <section className="panel studioPanel">
+        <h2>Model compatibility matrix</h2>
+        <p>
+          Documentation reviewed {guideCheckedOn}. These are external provider
+          options, not live connection checks or VibeForge integrations.
+        </p>
+        <div className="tiles">
+          {agentGuides.map((item) => (
+            <article key={item.name}>
+              <strong>{item.name}</strong>
+              <dl>
+                {modelColumns.map((model, index) => (
+                  <div key={model}>
+                    <dt>{model}</dt>
+                    <dd>{item.models[index]}</dd>
+                  </div>
+                ))}
+              </dl>
+            </article>
+          ))}
+        </div>
+        <p>
+          Documented means a provider is described by its official guide.
+          Custom endpoint requires compatible protocol and configuration. Not
+          verified does not mean unsupported. Local models need sufficient
+          hardware, context length and tool-calling support.
+        </p>
+        <p>
+          Keep Ollama on your own machine or trusted private network. Do not
+          expose a local inference port publicly or enter provider credentials
+          into project memory. Cloud usage may incur separate charges.
+        </p>
+      </section>
       <section className="panel studioPanel">
         <h2>Safe external setup</h2>
         <p>
