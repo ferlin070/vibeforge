@@ -26,6 +26,7 @@ import { agents } from "../lib/context.mjs";
 import { stages, makeBrief, makePrompt } from "../lib/planner.mjs";
 import { recoverLocal, validateProject } from "../lib/project-schema.mjs";
 import { refreshSession, recoveryFromFragment } from "../lib/cloud-auth.mjs";
+import { restoreSnapshotLocally } from "../lib/workspace.mjs";
 const empty = {
   name: "",
   type: "Web application",
@@ -278,6 +279,14 @@ export default function Home() {
     setProjects((x) => [item, ...x]);
     setStage("discovery");
     navigate("studio", item.id, true);
+  };
+  const restoreCloudSnapshot = (row) => {
+    if (recovery) throw Error("Complete local storage recovery first.");
+    const next = restoreSnapshotLocally(row, latestProjects.current, (items) =>
+      localStorage.setItem("vibeforge-v2", JSON.stringify(items)),
+    );
+    setProjects(next);
+    setSelected(row.id);
   };
   const addRecoveredDraft = (item) => {
     validateProject(item);
@@ -1066,8 +1075,8 @@ export default function Home() {
             <Cloud
               projects={projects}
               selected={selected}
-              setProjects={setProjects}
               setSelected={setSelected}
+              onRestore={restoreCloudSnapshot}
               session={session}
               setSession={setSession}
               recoveryToken={recoveryToken}
