@@ -757,3 +757,37 @@ test("team workspace owner creates a workspace and publishes an independent brie
   expect(projects[0].blueprintApproved).toBe(false);
   expect(projects[1].blueprint).toEqual(approved.blueprint);
 });
+
+test("operations and Malay navigation persist without changing project data", async ({
+  page,
+}) => {
+  await page.goto("/?view=operations");
+  const sidebar = page.locator(".sidebar");
+  await expect(
+    page.getByRole("heading", { name: "Workspace operations" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: fixture.name }),
+  ).toBeVisible();
+  const before = await stored(page);
+  await sidebar.getByLabel("Interface language").selectOption("ms");
+  await expect(
+    page.getByRole("heading", { name: "Operasi ruang kerja" }),
+  ).toBeVisible();
+  await page.reload();
+  await expect(
+    sidebar.getByLabel("Bahasa antara muka"),
+  ).toHaveValue("ms");
+  await expect(
+    page.getByRole("heading", { name: "Operasi ruang kerja" }),
+  ).toBeVisible();
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Eksport laporan ringkas" }).click();
+  expect((await download).suggestedFilename()).toBe(
+    "vibeforge-workspace-report.json",
+  );
+  expect(await stored(page)).toEqual(before);
+  await sidebar.getByLabel("Bahasa antara muka").selectOption("en");
+  await page.getByRole("button", { name: "Inspect quality" }).click();
+  await expect(page).toHaveURL(/view=quality.*project=integration-fixture/);
+});
