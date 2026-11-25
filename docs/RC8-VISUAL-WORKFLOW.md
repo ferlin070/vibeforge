@@ -1,0 +1,5 @@
+# RC8 — Visual workflow increment
+
+The existing role-based workflow designer now renders dependency waves derived from the validated blueprint. Each task card shows its dependency IDs, actual mission status, role and chosen agent. Waves indicate topological depth, not an authorization to run tasks concurrently. Existing assignments take precedence. The planner can save an individual suggested assignment only after confirmation and only if the task is ready and has no existing assignment. It uses the central mission and project update paths; it does not dispatch agents, change dependencies, clear evidence or approve a blueprint.
+
+The responsive layout uses native buttons and visible states rather than drag-only interaction. Unit tests cover dependency order, cycle rejection, approved-ready gating and existing-assignment preservation. Browser tests cover the assignment flow and preservation of blueprint approval and evidence. This is a visual planning and assignment increment; drag-and-drop graph editing, remote agent execution, scheduler, live telemetry and parallel coordination remain outside this scope.

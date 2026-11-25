@@ -1,0 +1,5 @@
+# RC2 Phase 5 — preserve user work
+
+Pure impactOf(project, patch) classifies scope changes and identifies exactly which approval, task reviews/reports, assignments, history, release checks and imported CI would be cleared. The shared UI update path confirms before applying an invalidating patch. Agent preference and Knowledge-only memory changes preserve approval, evidence, assignments and release checks. Existing assignments retain their assigned agent. Decision, Constraint and Blocker additions/removals and material specification changes retain conservative invalidation. Low and Medium bugs preserve checks; Critical/High creation, resolution or reopening can clear manual checks after confirmation. CI and unrelated data remain intact for bug changes. Identical scope values do not invalidate.
+
+No changes to database, deployment, or other branches. Browser interaction verification remains in Phase 10. Scope reset remains intentionally destructive after explicit confirmation; users should export existing work before accepting. The policy is deterministic, not semantic AI analysis.
