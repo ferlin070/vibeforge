@@ -171,7 +171,10 @@ test("recovery and resend use fixed endpoints and update user with recovery toke
 
 test("email callback is exact and restricted to approved application roots", () => {
   const list = "https://app.example/, http://127.0.0.1:4173/";
-  assert.equal(authRedirect("https://app.example", list), "https://app.example/");
+  assert.equal(
+    authRedirect("https://app.example", list),
+    "https://app.example/",
+  );
   assert.equal(
     authRedirect("http://127.0.0.1:4173", list),
     "http://127.0.0.1:4173/",

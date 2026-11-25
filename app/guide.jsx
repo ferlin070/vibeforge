@@ -46,9 +46,9 @@ export default function Guide({ go, projects, exportAll, clearAll }) {
       <section className="panel studioPanel">
         <h2>Choose your starting point</h2>
         <p>
-          Start locally without an account or API key. Sign in only when you need
-          cloud snapshots or hosted AI and GitHub services. AI generation may
-          incur charges on your own provider account.
+          Start locally without an account or API key. Sign in only when you
+          need cloud snapshots or hosted AI and GitHub services. AI generation
+          may incur charges on your own provider account.
         </p>
         <div className="actions">
           <button onClick={() => go("new")}>Start a local project</button>
@@ -120,8 +120,8 @@ export default function Guide({ go, projects, exportAll, clearAll }) {
           VibeForge does not execute coding agents, run arbitrary repository
           code, certify test results or deploy user projects automatically.
           Custom gateways require sign-in, public HTTPS and approved hosts in
-          hosted deployments. Always verify actual test evidence and obtain release
-          approval.
+          hosted deployments. Always verify actual test evidence and obtain
+          release approval.
         </p>
       </section>
     </>
