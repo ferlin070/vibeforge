@@ -29,16 +29,15 @@ jobs:
           npx --no-install prettier --write .
           node --input-type=module <<'NODE'
           import fs from 'node:fs';
-          import crypto from 'node:crypto';
-          import {execFileSync} from 'node:child_process';
+                    import {execFileSync} from 'node:child_process';
           const paths=execFileSync('git',['diff','--name-only','-z'],{encoding:'utf8'}).split('\0').filter(Boolean);
           console.log('VF_FORMAT_COUNT '+paths.length);
           for(const path of paths){
             const content=fs.readFileSync(path,'utf8');
-            const chunks=content.match(/[\s\S]{1,2000}/g)||[''];
+            const chunks=Buffer.from(content,'utf8').toString('base64').match(/.{1,2000}/g)||[''];
             const sha=execFileSync('git',['hash-object',path],{encoding:'utf8'}).trim();
             console.log('VF_FORMAT_META '+JSON.stringify({path,parts:chunks.length,sha}));
-            for(let i=0;i<chunks.length;i++)console.log('VF_FORMAT_PART '+JSON.stringify({path,i,content:chunks[i]}));
+            for(let i=0;i<chunks.length;i++)console.log('VF_FORMAT_B64 '+JSON.stringify({path,i,content:chunks[i]}));
           }
           NODE
       - run: npm run format:check
