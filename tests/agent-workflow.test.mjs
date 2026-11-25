@@ -2,7 +2,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { starterBlueprint } from "../lib/blueprint.mjs";
 import { assignTask } from "../lib/mission.mjs";
-import { workflowPreview } from "../lib/agent-workflow.mjs";
+import {
+  assignWorkflowSuggestion,
+  workflowLanes,
+  workflowPreview,
+} from "../lib/agent-workflow.mjs";
 
 const project = {
   name: "Workflow test",
@@ -43,4 +47,46 @@ test("unapproved, absent and invalid agent selections remain safe", () => {
   assert.ok(plan.tasks.every((task) => task.status === "Awaiting approval"));
   assert.ok(plan.tasks.every((task) => task.agent === "Codex"));
   assert.deepEqual(workflowPreview(null).tasks, []);
+});
+
+test("workflow waves respect dependencies even when task order is reversed", () => {
+  const tasks = workflowPreview(project).tasks.reverse();
+  const waves = workflowLanes(tasks);
+  const index = new Map();
+  for (const wave of waves)
+    for (const task of wave.tasks) index.set(task.id, wave.level);
+  for (const task of tasks)
+    for (const dependency of task.dependencies)
+      assert.ok(index.get(dependency) < index.get(task.id));
+  assert.throws(() =>
+    workflowLanes([{ id: "a", dependencies: ["a"] }]),
+  );
+});
+
+test("workflow suggestions assign only ready unassigned tasks", () => {
+  const before = JSON.stringify(project);
+  const patch = assignWorkflowSuggestion(
+    project,
+    "TASK-001",
+    { pm: "OpenCode" },
+    "2026-11-25",
+  );
+  const next = { ...project, ...patch };
+  assert.equal(workflowPreview(next).tasks[0].status, "Assigned");
+  assert.equal(next.mission.assignments["TASK-001"].handedOff, false);
+  assert.throws(() =>
+    assignWorkflowSuggestion(next, "TASK-001", {}, "2026-11-25"),
+  );
+  assert.throws(() =>
+    assignWorkflowSuggestion(project, "TASK-002", {}, "2026-11-25"),
+  );
+  assert.throws(() =>
+    assignWorkflowSuggestion(
+      { ...project, blueprintApproved: false },
+      "TASK-001",
+      {},
+      "2026-11-25",
+    ),
+  );
+  assert.equal(JSON.stringify(project), before);
 });
