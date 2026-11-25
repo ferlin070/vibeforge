@@ -25,6 +25,12 @@ jobs:
       - run: npm run lint
       - run: npm audit --omit=dev --audit-level=high
       - run: npm run format:check
+        id: format
+      - name: Show formatting diff on failure
+        if: failure() && steps.format.outcome == 'failure'
+        run: |
+          npx --no-install prettier --write app/code-review.jsx app/quality.jsx lib/review-workbench.mjs tests/review-workbench.test.mjs e2e/integrations.spec.mjs docs/RC5-PRODUCT-EXCELLENCE.md
+          git --no-pager diff -- app/code-review.jsx app/quality.jsx lib/review-workbench.mjs tests/review-workbench.test.mjs e2e/integrations.spec.mjs docs/RC5-PRODUCT-EXCELLENCE.md
       - run: npx --no-install playwright install --with-deps chromium
       - run: npm run test:e2e
         env:
