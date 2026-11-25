@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import TeamSpaces from "./team-space.jsx";
 import { cloudRequest } from "../lib/cloud-auth.mjs";
 import {
   getReceivedDraft,
@@ -16,6 +17,13 @@ export default function Team({ project, session, go, onImport }) {
   const [rows, setRows] = useState([]);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const active = useRef(false);
+  useEffect(() => {
+    active.current = true;
+    return () => {
+      active.current = false;
+    };
+  }, []);
   const run = async (operation) => {
     setBusy(true);
     try {
@@ -61,6 +69,7 @@ export default function Team({ project, session, go, onImport }) {
               Copy account ID
             </button>
           </section>
+          <TeamSpaces project={project} session={session} onImport={onImport} />
           <section className="panel studioPanel">
             <h2>Share active project brief</h2>
             {!project ? (
@@ -187,6 +196,7 @@ export default function Team({ project, session, go, onImport }) {
                           session,
                           cloudRequest,
                         );
+                        if (!active.current) return;
                         onImport(
                           importSharedDraft(
                             current,
