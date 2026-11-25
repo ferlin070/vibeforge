@@ -1,6 +1,7 @@
 "use client";
 import { redactText, redactExportText, hasSecret } from "../lib/redact.mjs";
 import { useState, useEffect, useRef } from "react";
+import { readRoute, routeURL, unsavedReasons, canLeave } from "../lib/navigation.mjs";
 import Studio from "./studio.jsx";
 import Cloud from "./cloud.jsx";
 import Repository from "./repository.jsx";
@@ -57,7 +58,12 @@ export default function Home() {
     [query, setQuery] = useState(""),
     [filter, setFilter] = useState("all"),
     [recovery, setRecovery] = useState(null),
-    [recoveryToken, setRecoveryToken] = useState(null);
+    [recoveryToken, setRecoveryToken] = useState(null),
+    [docBaseline, setDocBaseline] = useState(""),
+    [studioDirty, setStudioDirty] = useState(false);
+  const mobileDialog = useRef(null);
+  const menuButton = useRef(null);
+  const mainRegion = useRef(null);
   const latestProjects = useRef(projects);
   useEffect(() => {
     latestProjects.current = projects;
@@ -69,7 +75,10 @@ export default function Home() {
       const raw = localStorage.getItem("vibeforge-v2");
       const result = recoverLocal(raw);
       setProjects(result.projects);
-      setSelected(result.projects[0]?.id || "");
+      const route = readRoute(window.location.search, result.projects);
+      setSelected(route.selected);
+      setView(route.view);
+      if (route.missingProject) setNotice("Requested project is not available in this browser. Showing an available local project.");
       if (result.recovery) {
         setRecovery({ raw, rejected: result.rejected });
         setView("guide");
@@ -139,18 +148,69 @@ export default function Home() {
   // Preserve unsaved editor text when unrelated project fields change.
   /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
   useEffect(() => {
-    setDoc(p?.document || (p ? makeBrief(p) : ""));
+    const saved = p?.document ?? (p ? makeBrief(p) : "");
+    setDoc(saved);
+    setDocBaseline(saved);
   }, [selected, p?.document]);
   /* eslint-enable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
-  const go = (v) => {
-    setView(v);
-    setMobile(false);
-    setNotice("");
-    if (v === "new") {
-      setStep(0);
-      setDraft(empty);
-    }
+  const dirty = unsavedReasons({view,draft,empty,doc,baseline:docBaseline,studioDirty}).join("; ");
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (event) => { event.preventDefault(); event.returnValue = ""; };
+    window.addEventListener("beforeunload",warn);
+    return () => window.removeEventListener("beforeunload",warn);
+  },[dirty]);
+  useEffect(() => {
+    if (!ready) return;
+    const pop = () => {
+      const route = readRoute(window.location.search,projects);
+      if (route.view === view && route.selected === selected) return;
+      if (!canLeave(dirty ? [dirty] : [],window.confirm.bind(window))) {
+        window.history.pushState(null,"",routeURL(view,selected));
+        return;
+      }
+      setView(route.view); setSelected(route.selected); setMobile(false);
+      setStudioDirty(false);
+      if(view==="new"){setDraft(empty);setStep(0);}
+      if(view==="docs")setDoc(docBaseline);
+      setNotice(route.missingProject?"Requested project is not available in this browser.":"");
+    };
+    window.addEventListener("popstate",pop);
+    return () => window.removeEventListener("popstate",pop);
+  },[ready,projects,view,selected,dirty,docBaseline]);
+  useEffect(() => {
+    if (!ready) return;
+    const canonical = routeURL(view, selected);
+    if (window.location.pathname + window.location.search !== canonical)
+      window.history.replaceState(null,"",canonical+(view==="landing"?window.location.hash:""));
+  },[ready,view,selected]);
+  useEffect(() => {
+    const dialog=mobileDialog.current;
+    if (!dialog) return;
+    if (mobile && !dialog.open) dialog.showModal();
+    if (!mobile && dialog.open) dialog.close();
+  },[mobile,view]);
+  useEffect(() => {
+    const media=window.matchMedia("(min-width: 651px)");
+    const close=()=>{if(media.matches)setMobile(false)};
+    media.addEventListener("change",close);
+    return ()=>media.removeEventListener("change",close);
+  },[]);
+  useEffect(() => {
+    if(ready && view!=="landing")mainRegion.current?.focus({preventScroll:true});
+  },[view,ready]);
+  const navigate = (v, id=selected, bypass=false) => {
+    if(v===view&&id===selected){setMobile(false);return true;}
+    if(!bypass&&!canLeave(dirty?[dirty]:[],window.confirm.bind(window)))return false;
+    if(view==="new"||v==="new"){setStep(0);setDraft(empty);}
+    if(view==="docs"&&doc!==docBaseline)setDoc(docBaseline);
+    setStudioDirty(false);
+    window.history.pushState(null,"",routeURL(v,id));
+    setView(v);setSelected(id);setMobile(false);setNotice("");
+    return true;
   };
+  const go = (v) => navigate(v);
+  const selectProject = (id) => navigate(view,id);
   const field = (k, v) => setDraft((d) => ({ ...d, [k]: v }));
   const create = () => {
     if (!draft.name.trim() || !draft.idea.trim()) return;
@@ -169,9 +229,8 @@ export default function Home() {
       return;
     }
     setProjects((x) => [item, ...x]);
-    setSelected(item.id);
     setStage("discovery");
-    go("studio");
+    navigate("studio",item.id,true);
   };
   const toggle = (id) => {
     if (!p) return;
@@ -209,8 +268,10 @@ export default function Home() {
     return true;
   };
   const saveDoc = () => {
-    if (updateActive({ document: doc }))
+    if (updateActive({ document: doc })) {
+      setDocBaseline(doc);
       setNotice("Document saved on this browser.");
+    }
   };
   const copy = async (t) => {
     try {
@@ -243,9 +304,10 @@ export default function Home() {
         .includes(query.toLowerCase()),
   );
   const count = projects.reduce((n, x) => n + (x.reviewed?.length || 0), 0);
+  if (!ready) return <main className="boot-screen" aria-busy="true"><div className="brand">◈ VibeForge</div><p role="status">Loading your workspace…</p><div className="loading-track" aria-hidden="true"/></main>;
   if (view === "landing")
     return (
-      <main className="landing">
+      <main className="landing" id="main-content">
         <header className="top">
           {brand}
           <nav>
@@ -381,10 +443,7 @@ export default function Home() {
         </footer>
       </main>
     );
-  return (
-    <div className="shell">
-      <aside className={"sidebar " + (mobile ? "open" : "")}>
-        {brand}
+  const sidebarContent = <>        {brand}
         <div className="workspace-id">
           <span className="workspace-icon">VF</span>
           <div>
@@ -392,17 +451,18 @@ export default function Home() {
             <small>Personal workspace</small>
           </div>
         </div>
-        <div className="side-label">WORKSPACE</div>
-        {nav.map((n) => (
+        <nav aria-label="Workspace navigation">
+        {[["Workspace",nav.slice(0,3)],["Build",nav.slice(3,9)],["Verify",nav.slice(9,11)],["Account",nav.slice(11)]].map(([label,items])=>(<div className="navgroup" key={label}><div className="side-label">{label}</div>{items.map((n) => (
           <button
             key={n[0]}
             className={view === n[0] ? "nav active" : "nav"}
+            aria-current={view===n[0]?"page":undefined}
             onClick={() => go(n[0])}
           >
-            <span>{n[1]}</span>
+            <span aria-hidden="true">{n[1]}</span>
             {n[2]}
           </button>
-        ))}
+        ))}</div>))}</nav>
         <div className="sidebottom">
           <div className="local">
             <i /> {session ? "Cloud session active" : "Local-first mode"}
@@ -416,12 +476,23 @@ export default function Home() {
             ↖ &nbsp; Back to website
           </button>
         </div>
-      </aside>
+</>;
+  return (
+    <div className="shell">
+      <a className="skip-link" href="#main-content">Skip to content</a>
+      <aside className="sidebar" aria-label="Workspace sidebar">{sidebarContent}</aside>
+      <dialog ref={mobileDialog} id="mobile-navigation" className="mobile-drawer" aria-label="Workspace navigation" onClose={()=>{setMobile(false);menuButton.current?.focus();}}>
+        <button className="ghost drawer-close" onClick={()=>setMobile(false)}>Close navigation ×</button>
+        {sidebarContent}
+      </dialog>
       <div className="work">
         <header className="worktop">
           <button
             className="ghost mobile"
+            ref={menuButton}
             aria-label="Toggle navigation"
+            aria-expanded={mobile}
+            aria-controls="mobile-navigation"
             onClick={() => setMobile(!mobile)}
           >
             ☰
@@ -440,7 +511,8 @@ export default function Home() {
             <button onClick={() => go("new")}>＋ New project</button>
           </div>
         </header>
-        <main className="content">
+        <main className="content" id="main-content" ref={mainRegion} tabIndex={-1}>
+          {dirty && <p className="draft-status" role="status">Unsaved work · {dirty}</p>}
           {view === "overview" && (
             <>
               <div className="banner">
@@ -517,13 +589,12 @@ export default function Home() {
                     <article key={x.id}>
                       <small>{x.type}</small>
                       <h3>{x.name}</h3>
-                      <progress max={8} value={x.reviewed.length} />
+                      <progress aria-label={"Reviewed stages for "+x.name} max={8} value={x.reviewed.length} />
                       <p>{x.reviewed.length}/8 stages manually reviewed</p>
                       <button
                         className="ghost"
                         onClick={() => {
-                          setSelected(x.id);
-                          go("workflow");
+                          navigate("workflow",x.id);
                         }}
                       >
                         Open workspace →
@@ -569,6 +640,7 @@ export default function Home() {
                   {visible.length} of {projects.length} projects
                 </small>
               </div>
+              {!visible.length && <section className="panel empty"><h2>{projects.length?"No matching projects":"No projects yet"}</h2><p>{projects.length?"Try a different search or reset the filters.":"Create a project to start planning."}</p>{projects.length?<button className="ghost" onClick={()=>{setQuery("");setFilter("all");}}>Reset filters</button>:<button onClick={()=>go("new")}>Create project</button>}</section>}
               <div className="tiles">
                 {visible.map((x) => (
                   <article key={x.id}>
@@ -577,8 +649,7 @@ export default function Home() {
                     <p>{x.idea.slice(0, 150)}</p>
                     <button
                       onClick={() => {
-                        setSelected(x.id);
-                        go("workflow");
+                        navigate("workflow",x.id);
                       }}
                     >
                       Open →
@@ -613,7 +684,7 @@ export default function Home() {
               <p>Three simple steps to a structured project brief.</p>
               <div className="steps">
                 {["Project", "Discovery", "Handoff"].map((s, i) => (
-                  <span key={s} className={i === step ? "current" : ""}>
+                  <span key={s} aria-current={i===step?"step":undefined} className={i === step ? "current" : ""}>
                     {i + 1}. {s}
                   </span>
                 ))}
@@ -632,6 +703,7 @@ export default function Home() {
                         Project name
                         <input
                           required
+                          maxLength={200}
                           value={draft.name}
                           onChange={(e) => field("name", e.target.value)}
                           placeholder="e.g. Smart Booking"
@@ -665,6 +737,7 @@ export default function Home() {
                         <textarea
                           required
                           rows={7}
+                          maxLength={12000}
                           value={draft.idea}
                           onChange={(e) => field("idea", e.target.value)}
                           placeholder="Describe your idea, business problem and desired features..."
@@ -690,6 +763,7 @@ export default function Home() {
                       <label>
                         Target users (optional)
                         <input
+                          maxLength={500}
                           value={draft.audience}
                           onChange={(e) => field("audience", e.target.value)}
                           placeholder="e.g. small business owners"
@@ -763,8 +837,9 @@ export default function Home() {
               project={p}
               projects={projects}
               selected={selected}
-              select={setSelected}
+              select={selectProject}
               update={updateActive}
+              onDirtyChange={setStudioDirty}
               newProject={() => go("new")}
             />
           )}
@@ -775,7 +850,7 @@ export default function Home() {
               project={p}
               projects={projects}
               selected={selected}
-              select={setSelected}
+              select={selectProject}
               update={updateActive}
               newProject={() => go("new")}
             />
@@ -786,7 +861,7 @@ export default function Home() {
               project={p}
               projects={projects}
               selected={selected}
-              select={setSelected}
+              select={selectProject}
               update={updateActive}
               newProject={() => go("new")}
             />
@@ -797,7 +872,7 @@ export default function Home() {
               project={p}
               projects={projects}
               selected={selected}
-              select={setSelected}
+              select={selectProject}
               update={updateActive}
               newProject={() => go("new")}
               openStudio={() => go("studio")}
@@ -810,7 +885,7 @@ export default function Home() {
               project={p}
               projects={projects}
               selected={selected}
-              select={setSelected}
+              select={selectProject}
               update={updateActive}
               newProject={() => go("new")}
             />
@@ -862,8 +937,7 @@ export default function Home() {
                     <select
                       value={selected}
                       onChange={(e) => {
-                        setSelected(e.target.value);
-                        setNotice("");
+                        selectProject(e.target.value);
                       }}
                     >
                       <option value="">Select a project</option>
@@ -898,7 +972,7 @@ export default function Home() {
                     {p.type} · {p.agent} · {p.reviewed.length}/8 stages manually
                     reviewed
                   </p>
-                  <progress max={8} value={p.reviewed.length} />
+                  <progress aria-label="Reviewed workflow stages" max={8} value={p.reviewed.length} />
                   <div className="workflow">
                     {stages.map((s, i) => (
                       <article key={s[0]}>

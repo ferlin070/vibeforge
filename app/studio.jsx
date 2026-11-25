@@ -6,7 +6,7 @@ import {
   redactExportText,
   hasSecret,
 } from "../lib/redact.mjs";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { scoreBlueprint } from "../lib/blueprint-quality.mjs";
 import {
   sections,
@@ -27,6 +27,7 @@ export default function Studio({
   update,
   newProject,
   session,
+  onDirtyChange,
 }) {
   const [key, setKey] = useState(""),
     [model, setModel] = useState("gpt-4.1-mini"),
@@ -42,6 +43,8 @@ export default function Studio({
     [taskId, setTaskId] = useState(""),
     [report, setReport] = useState(""),
     [candidate, setCandidate] = useState(null);
+  const dirty = !!candidate || (!!report.trim() && report.trim() !== (p?.evidence?.[taskId || p?.blueprint?.tasks?.[0]?.id]?.report || "").trim());
+  useEffect(()=>{onDirtyChange?.(dirty);return ()=>onDirtyChange?.(false)},[dirty,onDirtyChange]);
   if (!p)
     return (
       <section className="panel">
@@ -415,7 +418,8 @@ export default function Studio({
         >
           Start manual blueprint
         </button>
-        <p role="status">{msg}</p>
+        {busy && <div className="loading-track" aria-hidden="true" />}
+        <p role="status" aria-live="polite">{msg}</p>
       </section>
       {candidate && (
         <section className="panel studioPanel">
