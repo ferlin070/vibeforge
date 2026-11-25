@@ -85,8 +85,8 @@ export default function Architect({ project }) {
       </button>
       <p>
         Use this prompt with your preferred external agent or Gemini. Review
-        private project data before sharing. Use the existing AI generation
-        form for full blueprint generation with your selected provider.
+        private project data before sharing. Use the existing AI generation form
+        for full blueprint generation with your selected provider.
       </p>
       {message && <p role="status">{message}</p>}
     </section>
