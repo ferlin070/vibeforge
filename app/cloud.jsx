@@ -440,7 +440,9 @@ export default function Cloud({
                         request,
                         (timestamp) =>
                           confirm(
-                            "Delete the cloud snapshot saved " + timestamp + "?",
+                            "Delete the cloud snapshot saved " +
+                              timestamp +
+                              "?",
                           ),
                       );
                       if (result.status === "cancelled") return;
