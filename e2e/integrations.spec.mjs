@@ -347,13 +347,17 @@ test("architecture and review workbenches do not change approved project", async
   await page.goto("/?view=quality");
   await page.getByLabel("Reproduction / error log").fill("TypeError: fixture");
   const debugDownload = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Export debug investigation" }).click();
+  await page
+    .getByRole("button", { name: "Export debug investigation" })
+    .click();
   expect((await debugDownload).suggestedFilename()).toBe(
     "debug-investigation.md",
   );
   await page.getByRole("button", { name: "Code review", exact: true }).click();
   await page.getByLabel("Review diff").fill("+eval(input)");
-  await expect(page.getByText("Dynamic evaluation: 1 possible matches")).toBeVisible();
+  await expect(
+    page.getByText("Dynamic evaluation: 1 possible matches"),
+  ).toBeVisible();
   const reviewDownload = page.waitForEvent("download");
   await page.getByRole("button", { name: "Export code review prompt" }).click();
   expect((await reviewDownload).suggestedFilename()).toBe("code-review.md");
