@@ -8,6 +8,7 @@ import {
 } from "../lib/redact.mjs";
 import { useState, useEffect } from "react";
 import Architect from "./architect.jsx";
+import { generationContext, generationSummary } from "../lib/model-control.mjs";
 import { scoreBlueprint } from "../lib/blueprint-quality.mjs";
 import {
   sections,
@@ -65,6 +66,7 @@ export default function Studio({
       </section>
     );
   const currentProvider = providerById(provider);
+  const modelSummary = generationSummary(provider, model, p, includeRepo);
   const b = p.blueprint,
     evidence = p.evidence || {},
     t = b?.tasks.find((x) => x.id === taskId) || b?.tasks[0];
@@ -98,9 +100,12 @@ export default function Studio({
     )
       return;
     if (
-      b &&
       !confirm(
-        "Generate a candidate blueprint? Provider charges may apply. Existing work is unchanged until you confirm the impact.",
+        "Generate a candidate with " +
+          currentProvider.label +
+          " / " +
+          model +
+          "? Provider charges may apply. Existing work is unchanged until you confirm the impact.",
       )
     )
       return;
@@ -117,16 +122,7 @@ export default function Studio({
         },
         signal: AbortSignal.timeout(65000),
         body: JSON.stringify({
-          project: redactData({
-            name: p.name,
-            type: p.type,
-            idea: p.idea,
-            audience: p.audience,
-            agent: p.agent,
-            repositoryContext: includeRepo
-              ? JSON.stringify(p.repository || {}).slice(0, 8000)
-              : "",
-          }),
+          project: generationContext(p, includeRepo),
           model,
           provider,
           custom: { baseURL, format, auth, jsonMode },
@@ -404,6 +400,23 @@ export default function Studio({
             />
           </label>
         </div>
+        <section className="summary" aria-label="AI model control center">
+          <h3>AI Model Control Center</h3>
+          <p>
+            {modelSummary.provider} · {modelSummary.model || "Select model"}
+          </p>
+          <p>
+            Configuration:{" "}
+            {modelSummary.valid ? "Model ID format accepted" : "Model ID required"}
+            {" · "}
+            {key.trim() ? "Key entered (memory only)" : "Key not entered"}
+          </p>
+          <details>
+            <summary>Preview exact project context sent to provider</summary>
+            <pre>{JSON.stringify(modelSummary.context, null, 2)}</pre>
+          </details>
+          <small>{modelSummary.notice}</small>
+        </section>
         <button
           disabled={
             busy ||
