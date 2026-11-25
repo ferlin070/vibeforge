@@ -323,3 +323,42 @@ test("Agent Hub filters targets and preserves approved project work", async ({
   await page.getByRole("button", { name: "Open Prompt Lab" }).click();
   await expect(page.locator("pre")).toContainText("Target agent: OpenCode");
 });
+
+test("architecture and review workbenches do not change approved project", async ({
+  page,
+}) => {
+  await page.goto("/?view=studio");
+  await expect(
+    page.getByRole("heading", { name: "AI Project Architect 2.0" }),
+  ).toBeVisible();
+  const option = page.locator("article").filter({
+    has: page.getByRole("heading", { name: "Self-hosted application" }),
+  });
+  await option.getByRole("button", { name: "Select option" }).click();
+  await expect(option.getByRole("button")).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  const adrDownload = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Export ADR candidate" }).click();
+  expect((await adrDownload).suggestedFilename()).toBe(
+    "architecture-decision-candidate.md",
+  );
+  await page.goto("/?view=quality");
+  await page.getByLabel("Reproduction / error log").fill("TypeError: fixture");
+  const debugDownload = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Export debug investigation" }).click();
+  expect((await debugDownload).suggestedFilename()).toBe(
+    "debug-investigation.md",
+  );
+  await page.getByRole("button", { name: "Code review", exact: true }).click();
+  await page.getByLabel("Review diff").fill("+eval(input)");
+  await expect(page.getByText("Dynamic evaluation: 1 possible matches")).toBeVisible();
+  const reviewDownload = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Export code review prompt" }).click();
+  expect((await reviewDownload).suggestedFilename()).toBe("code-review.md");
+  const project = (await stored(page))[0];
+  expect(project.blueprintApproved).toBe(true);
+  expect(project.blueprint).toEqual(approved.blueprint);
+  expect(project.evidence).toEqual({});
+});
