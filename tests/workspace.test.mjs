@@ -6,6 +6,8 @@ import {
   checkpointDraft,
   snapshotDraft,
   saveSnapshotSafely,
+  deleteSnapshotSafely,
+  restoreSnapshotLocally,
 } from "../lib/workspace.mjs";
 
 const now = "2026-11-25T00:00:00.000Z";
@@ -119,4 +121,64 @@ test("cancellation and invalid stored snapshots never write", async () => {
       () => true,
     ),
   );
+});
+
+test("conditional snapshot deletion requires explicit approval and exact version", async () => {
+  const calls = [];
+  const request = async (path, options, token) => {
+    calls.push({ path, options, token });
+    return [row];
+  };
+  assert.equal(
+    (await deleteSnapshotSafely(row, session, request, () => false)).status,
+    "cancelled",
+  );
+  assert.equal(calls.length, 0);
+  const result = await deleteSnapshotSafely(
+    row,
+    session,
+    request,
+    (timestamp) => timestamp === now,
+  );
+  assert.equal(result.status, "deleted");
+  const params = new URL("https://fixture.invalid" + calls[0].path)
+    .searchParams;
+  assert.equal(params.get("owner_id"), "eq." + session.id);
+  assert.equal(params.get("id"), "eq." + p.id);
+  assert.equal(params.get("updated_at"), "eq." + now);
+  assert.equal(calls[0].options.method, "DELETE");
+  assert.equal(calls[0].options.headers.Prefer, "return=representation");
+  assert.equal(calls[0].token, session.token);
+});
+
+test("missing or changed cloud snapshot does not report successful deletion", async () => {
+  await assert.rejects(
+    deleteSnapshotSafely(row, session, async () => [], () => true),
+    /changed or disappeared/,
+  );
+  await assert.rejects(
+    deleteSnapshotSafely(row, null, async () => [row], () => true),
+    /Sign in/,
+  );
+});
+
+test("local snapshot restore persists first and preserves unrelated projects", () => {
+  const other = { ...p, id: "other" };
+  const projects = [{ ...p, name: "Local draft" }, other];
+  const before = JSON.stringify(projects);
+  assert.throws(
+    () =>
+      restoreSnapshotLocally(row, projects, () => {
+        throw Error("Storage quota");
+      }),
+    /Storage quota/,
+  );
+  assert.equal(JSON.stringify(projects), before);
+  let saved;
+  const result = restoreSnapshotLocally(row, projects, (next) => {
+    saved = next;
+  });
+  assert.deepEqual(saved, result);
+  assert.deepEqual(result, [p, other]);
+  assert.equal(JSON.stringify(projects), before);
 });
