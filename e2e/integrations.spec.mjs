@@ -452,3 +452,31 @@ test("workflow waves allow confirmed assignment only for ready tasks", async ({
   expect(project.blueprint).toEqual(approved.blueprint);
   expect(project.evidence).toEqual({});
 });
+
+test("architecture draft exports entities and contracts without changing project", async ({
+  page,
+}) => {
+  await page.goto("/?view=studio");
+  const studio = page.getByRole("region", {
+    name: "Visual Architecture Studio",
+  });
+  await studio.getByLabel("Entity name").fill("Customer");
+  await studio.getByLabel("Fields (name:type, comma separated)").fill("id:uuid");
+  await studio.getByRole("button", { name: "Add entity" }).click();
+  await studio.getByLabel("Entity name").fill("Booking");
+  await studio.getByLabel("Fields (name:type, comma separated)").fill("id:uuid");
+  await studio.getByRole("button", { name: "Add entity" }).click();
+  await studio.getByLabel("From entity").selectOption("Customer");
+  await studio.getByLabel("To entity").selectOption("Booking");
+  await studio.getByRole("button", { name: "Add relationship" }).click();
+  await expect(studio.getByText("Customer → Booking")).toBeVisible();
+  await studio.getByLabel("Endpoint path").fill("/api/bookings");
+  await studio.getByLabel("Endpoint purpose").fill("List owned bookings");
+  await studio.getByRole("button", { name: "Add endpoint" }).click();
+  await expect(studio.getByText("GET /api/bookings")).toBeVisible();
+  const download = page.waitForEvent("download");
+  await studio.getByRole("button", { name: "Export architecture model" }).click();
+  expect((await download).suggestedFilename()).toBe("architecture-draft.json");
+  expect((await stored(page))[0].blueprint).toEqual(approved.blueprint);
+  expect((await stored(page))[0].blueprintApproved).toBe(true);
+});
