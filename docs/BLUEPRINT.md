@@ -1,4 +1,6 @@
-# VibeForge — product blueprint
+# VibeForge — historical product blueprint
+
+> Historical design proposal, not the implemented architecture or current agent instructions. See [current project state](PROJECT_STATE.md) and [architecture](ARCHITECTURE.md). Original proposed features may be unimplemented or superseded.
 
 ## Goal
 
