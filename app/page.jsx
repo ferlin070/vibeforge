@@ -15,6 +15,7 @@ import Mission from "./mission.jsx";
 import Quality from "./quality.jsx";
 import Guide from "./guide.jsx";
 import DashboardFocus from "./dashboard.jsx";
+import Portfolio from "./portfolio.jsx";
 import AgentHub from "./agent-hub.jsx";
 import {
   applyProjectPatch,
@@ -688,45 +689,11 @@ export default function Home() {
                   </button>
                 ))}
               </div>
-              <div className="sectionhead">
-                <div>
-                  <div className="eyebrow">PROJECTS</div>
-                  <h2>Continue building</h2>
-                </div>
-                <button className="ghost" onClick={() => go("projects")}>
-                  View all →
-                </button>
-              </div>
-              <div className="tiles">
-                {projects.length ? (
-                  projects.map((x) => (
-                    <article key={x.id}>
-                      <small>{x.type}</small>
-                      <h3>{x.name}</h3>
-                      <progress
-                        aria-label={"Reviewed stages for " + x.name}
-                        max={8}
-                        value={x.reviewed.length}
-                      />
-                      <p>{x.reviewed.length}/8 stages manually reviewed</p>
-                      <button
-                        className="ghost"
-                        onClick={() => {
-                          navigate("workflow", x.id);
-                        }}
-                      >
-                        Open workspace →
-                      </button>
-                    </article>
-                  ))
-                ) : (
-                  <article className="empty">
-                    <h3>No projects yet</h3>
-                    <p>Create your first project to start the workflow.</p>
-                    <button onClick={() => go("new")}>Start a project</button>
-                  </article>
-                )}
-              </div>
+              <Portfolio
+                projects={projects}
+                selected={selected}
+                navigate={navigate}
+              />
             </>
           )}
           {view === "projects" && (
