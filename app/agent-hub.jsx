@@ -204,8 +204,9 @@ export default function AgentHub({ project, update, go }) {
         <p>
           Install and configure the external tool using its official
           documentation. Confirm supported models, licensing, costs and
-          workspace permissions there. VibeForge does not install agents, connect their accounts or store their
-          credentials. The OpenCode runner pilot is launched locally by you.
+          workspace permissions there. VibeForge does not install agents,
+          connect their accounts or store their credentials. The OpenCode runner
+          pilot is launched locally by you.
         </p>
         <p>
           Export context or copy a prompt, review sensitive information, and
