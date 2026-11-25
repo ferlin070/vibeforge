@@ -18,6 +18,7 @@ import DashboardFocus from "./dashboard.jsx";
 import Portfolio from "./portfolio.jsx";
 import AgentHub from "./agent-hub.jsx";
 import TemplateCatalog from "./templates.jsx";
+import Team from "./team.jsx";
 import {
   applyProjectPatch,
   impactOf,
@@ -51,6 +52,7 @@ const nav = [
   ["mission", "◎", "Mission control"],
   ["quality", "✓", "Quality studio"],
   ["cloud", "☁", "Cloud account"],
+  ["team", "◎", "Team collaboration"],
   ["guide", "?", "Help & privacy"],
 ];
 const modes = ["Plan", "Build", "Debug", "Audit", "Improve"];
@@ -1035,6 +1037,15 @@ export default function Home() {
                   setNotice("Local projects cleared.");
                 }
               }}
+            />
+          )}
+          {view === "team" && (
+            <Team
+              key={session?.id || "signed-out"}
+              project={p}
+              session={session}
+              go={go}
+              onImport={addRecoveredDraft}
             />
           )}
           {view === "cloud" && (
