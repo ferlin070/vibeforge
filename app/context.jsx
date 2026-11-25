@@ -1,4 +1,5 @@
 "use client";
+import {redactExportText} from "../lib/redact.mjs";
 import {useState} from "react";
 import {agents,categories,memoryOf,versionsOf,newMemory,checkpoint,compareContext,resume,agentPrompt,agentFiles} from "../lib/context.mjs";
 import {makeZip} from "../lib/zip.mjs";
@@ -8,7 +9,7 @@ export default function ContextManager({project:p,projects,selected,select,updat
  const memory=memoryOf(p),versions=versionsOf(p),r=resume(p),v=versions.find(x=>x.id===version),diff=v?compareContext(p,v):null;
  const prompt=agentPrompt(p,agent,mode,task);
  const handle=fn=>{try{fn();setMsg("Saved locally. Cloud snapshots remain manual.")}catch(e){setMsg(e.message)}};
- const dl=(data,name,type)=>{const u=URL.createObjectURL(new Blob([data],{type}));const a=document.createElement("a");a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)};
+ const dl=(data,name,type)=>{const u=URL.createObjectURL(new Blob([redactExportText(data)],{type}));const a=document.createElement("a");a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)};
  const copy=async()=>{try{await navigator.clipboard.writeText(prompt);setMsg("Copied agent handoff.")}catch{setMsg("Clipboard unavailable. Export instead.")}};
  return <><div className="eyebrow">CONTEXT ENGINEERING</div><h1>Project memory & handoff</h1><p>Keep decisions, evidence and context consistent across coding agents. Never include credentials in memory or exports.</p><label className="projectselect">Active project<select value={selected} onChange={e=>select(e.target.value)}>{projects.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
  <div className="stats studioStats">{[["Memory",memory.length],["Checkpoints",versions.length+"/3"],["Ready tasks",r.ready.length],["Reviewed",r.reviewed.length]].map(([k,v])=><article key={k}><small>{k}</small><strong>{v}</strong></article>)}</div>

@@ -1,0 +1,3 @@
+# RC2 Phase 1 — secret redaction
+
+Shared best-effort redaction for common provider tokens, credential URLs and private-key blocks. Agent reports and memory notes are redacted on new writes; all generated export paths redact recognizable patterns, and cloud snapshots redact a copy after confirmation. Idea and project document input remain unchanged unless the user chooses to redact. Older local data may still contain secrets until edited; export redaction does not revoke credentials. No guarantee that every secret format is detected. Do not enter credentials into project data. No deployment. Full npm test/build validation required before merging. No other phase implemented.
