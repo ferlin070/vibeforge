@@ -1,3 +1,4 @@
+import {githubError} from "../../../lib/github-errors.mjs";
 import {guard,boundedText,boundedJSON,RequestError,sameOrigin} from "../../../lib/request-guard.mjs";
 import {parseRepo,inventory} from "../../../lib/repository.mjs";
 export const runtime="nodejs";
@@ -11,9 +12,9 @@ export async function POST(req){
  let repo;try{repo=parseRepo(JSON.parse(raw).repo)}catch{return reply({error:"Enter a valid GitHub owner/repository"},400)}
  const token=req.headers.get("x-github-token")||"";
  if(token&&!/^[A-Za-z0-9_\-]{12,300}$/.test(token))return reply({error:"Invalid GitHub token format"},400);
- await guard(req,"repository");
+ await guard(req,"repository",{githubToken:!!token});
  const signal=AbortSignal.timeout(24000);
- const get=async(path,optional=false)=>{const res=await fetch("https://api.github.com/repos/"+repo+path,{headers:{Accept:"application/vnd.github+json","X-GitHub-Api-Version":"2022-11-28",...(token?{Authorization:"Bearer "+token}:{})},redirect:"error",cache:"no-store",signal});if(optional&&res.status===404)return null;if(!res.ok)throw Error("GitHub request failed ("+res.status+"). Check access or rate limit.");return boundedJSON(res,12000000)};
+ const get=async(path,optional=false)=>{const res=await fetch("https://api.github.com/repos/"+repo+path,{headers:{Accept:"application/vnd.github+json","X-GitHub-Api-Version":"2022-11-28",...(token?{Authorization:"Bearer "+token}:{})},redirect:"error",cache:"no-store",signal});if(optional&&res.status===404)return null;if(!res.ok)throw githubError(res,!!token);return boundedJSON(res,12000000)};
  const meta=await get("");const commit=await get("/commits/"+encodeURIComponent(meta.default_branch));
  const tree=await get("/git/trees/"+encodeURIComponent(commit.commit.tree.sha)+"?recursive=1");
  const manifest=await get("/contents/package.json?ref="+encodeURIComponent(commit.sha),true);

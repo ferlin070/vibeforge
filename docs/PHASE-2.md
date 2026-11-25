@@ -1,0 +1,3 @@
+# RC2 Phase 2 — API guards and abuse controls
+
+All hosted and non-development API operations require verified Supabase sessions. Only non-custom operations in plain local development can bypass auth. Origin-less requests require a session header. GitHub no-token operations share a 2/minute per-user limit; GitHub 403 with exhausted quota or retry-after and 429 map to a clear 429 without retries. Optional Upstash Redis REST uses atomic EVAL, expiring fixed windows and capped distinct buckets. Without both env vars the memory adapter is per-instance, with a one-time warning when both are absent; partial configuration or Redis errors fail closed. No Redis account or credentials created. Tests mock all services. No deployment.

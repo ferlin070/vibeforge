@@ -24,6 +24,8 @@ export async function POST(req){
  if(!res.ok)return reply({error:"Provider rejected request ("+res.status+"). Check model availability, API key, JSON support and quota."},res.status===429?429:502);
  let output;try{output=extractOutput(provider,await boundedJSON(res,1000000),custom)}catch{return reply({error:"Provider output was incomplete or invalid. Try a smaller project scope."},502)}
  let blueprint;try{blueprint=validateBlueprint(parseOutput(output))}catch{return reply({error:"AI output failed blueprint validation. No project data was changed."},422)}
- return reply({blueprint,provider,model});
+ const result={blueprint,provider,model};
+ if(output.includes(key)||JSON.stringify(result).includes(JSON.stringify(key).slice(1,-1)))return reply({error:"Provider output contained confidential data. No project data was changed."},422);
+ return reply(result);
  }catch(e){if(e instanceof RequestError)return reply({error:e.message},e.status);return reply({error:"Generation failed or timed out. No automatic retry was made."},502)}
 }
