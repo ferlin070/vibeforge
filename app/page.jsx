@@ -19,6 +19,8 @@ import Portfolio from "./portfolio.jsx";
 import AgentHub from "./agent-hub.jsx";
 import TemplateCatalog from "./templates.jsx";
 import Team from "./team.jsx";
+import Operations from "./operations.jsx";
+import { normalizeLanguage, translate } from "../lib/language.mjs";
 import {
   applyProjectPatch,
   impactOf,
@@ -51,6 +53,7 @@ const nav = [
   ["agents", "◎", "Agent hub"],
   ["mission", "◎", "Mission control"],
   ["quality", "✓", "Quality studio"],
+  ["operations", "▤", "Workspace operations"],
   ["cloud", "☁", "Cloud account"],
   ["team", "◎", "Team collaboration"],
   ["guide", "?", "Help & privacy"],
@@ -74,7 +77,18 @@ export default function Home() {
     [recovery, setRecovery] = useState(null),
     [recoveryToken, setRecoveryToken] = useState(null),
     [docBaseline, setDocBaseline] = useState(""),
-    [studioDirty, setStudioDirty] = useState(false);
+    [studioDirty, setStudioDirty] = useState(false),
+    [language, setLanguage] = useState("en");
+  const t = (key) => translate(language, key);
+  const changeLanguage = (value) => {
+    const next = normalizeLanguage(value);
+    setLanguage(next);
+    try {
+      localStorage.setItem("vibeforge-language", next);
+    } catch {
+      setNotice("Language preference could not be saved.");
+    }
+  };
   const mobileDialog = useRef(null);
   const menuButton = useRef(null);
   const mainRegion = useRef(null);
@@ -103,6 +117,11 @@ export default function Home() {
     } catch {
       setRecovery({ raw: null, rejected: 0 });
       setView("guide");
+    }
+    try {
+      setLanguage(normalizeLanguage(localStorage.getItem("vibeforge-language")));
+    } catch {
+      // Language preference is independent of project recovery.
     }
     const link = recoveryFromFragment(window.location.hash);
     if (link.recognized) {
@@ -529,19 +548,19 @@ export default function Home() {
       <div className="workspace-id">
         <span className="workspace-icon">VF</span>
         <div>
-          <b>My workspace</b>
-          <small>Personal workspace</small>
+          <b>{t("My workspace")}</b>
+          <small>{t("Personal workspace")}</small>
         </div>
       </div>
-      <nav aria-label="Workspace navigation">
+      <nav aria-label={t("Workspace navigation")}>
         {[
           ["Workspace", nav.slice(0, 4)],
           ["Build", nav.slice(4, 11)],
-          ["Verify", nav.slice(11, 13)],
-          ["Account", nav.slice(13)],
+          ["Verify", nav.slice(11, 14)],
+          ["Account", nav.slice(14)],
         ].map(([label, items]) => (
           <div className="navgroup" key={label}>
-            <div className="side-label">{label}</div>
+            <div className="side-label">{t(label)}</div>
             {items.map((n) => (
               <button
                 key={n[0]}
@@ -550,47 +569,68 @@ export default function Home() {
                 onClick={() => go(n[0])}
               >
                 <span aria-hidden="true">{n[1]}</span>
-                {n[2]}
+                {t(n[2])}
               </button>
             ))}
           </div>
         ))}
       </nav>
       <div className="sidebottom">
+        <label>
+          {t("Interface language")}
+          <select
+            value={language}
+            onChange={(event) => changeLanguage(event.target.value)}
+          >
+            <option value="en" lang="en">
+              English
+            </option>
+            <option value="ms" lang="ms">
+              Bahasa Melayu
+            </option>
+          </select>
+        </label>
+        <p>
+          {t(
+            "Navigation and operations only; other modules remain in English.",
+          )}
+        </p>
         <div className="local">
-          <i /> {session ? "Cloud session active" : "Local-first mode"}
+          <i /> {t(session ? "Cloud session active" : "Local-first mode")}
         </div>
         <p>
-          {session
-            ? "Cloud backups are manual. Local data stays on this browser."
-            : "Local projects stay on this browser. Sign in for cloud snapshots."}
+          {t(
+            session
+              ? "Cloud backups are manual. Local data stays on this browser."
+              : "Local projects stay on this browser. Sign in for cloud snapshots.",
+          )}
         </p>
         <button className="nav" onClick={() => go("landing")}>
-          ↖ &nbsp; Back to website
+          ↖ &nbsp; {t("Back to website")}
         </button>
       </div>
     </>
   );
   return (
-    <div className="shell">
+    <div className="shell" lang={language}>
       <a className="skip-link" href="#main-content">
-        Skip to content
+        {t("Skip to content")}
       </a>
-      <aside className="sidebar" aria-label="Workspace sidebar">
+      <aside className="sidebar" aria-label={t("Workspace sidebar")}>
         {sidebarContent}
       </aside>
       <dialog
         ref={mobileDialog}
         id="mobile-navigation"
         className="mobile-drawer"
-        aria-label="Workspace navigation"
+        aria-label={t("Workspace navigation")}
         onClose={() => {
           setMobile(false);
           menuButton.current?.focus();
         }}
       >
         <button className="ghost drawer-close" onClick={() => setMobile(false)}>
-          Close navigation ×
+          {t("Close navigation")} ×
         </button>
         {sidebarContent}
       </dialog>
@@ -599,7 +639,7 @@ export default function Home() {
           <button
             className="ghost mobile"
             ref={menuButton}
-            aria-label="Toggle navigation"
+            aria-label={t("Toggle navigation")}
             aria-expanded={mobile}
             aria-controls="mobile-navigation"
             onClick={() => setMobile(!mobile)}
@@ -607,21 +647,23 @@ export default function Home() {
             ☰
           </button>
           <span>
-            Workspace <b>/ {nav.find((n) => n[0] === view)?.[2]}</b>
+            {t("Workspace")}{" "}
+            <b>/ {t(nav.find((n) => n[0] === view)?.[2] || "")}</b>
           </span>
           <div className="topactions">
             <button
               className="ghost accountchip"
               onClick={() => go("cloud")}
-              title={session?.email || "Sign in"}
+              title={session?.email || t("Sign in")}
             >
-              {session ? "● Account" : "Sign in"}
+              {session ? "● " + t("Account") : t("Sign in")}
             </button>
-            <button onClick={() => go("new")}>＋ New project</button>
+            <button onClick={() => go("new")}>＋ {t("New project")}</button>
           </div>
         </header>
         <main
           className="content"
+          lang={view === "operations" ? language : "en"}
           id="main-content"
           ref={mainRegion}
           tabIndex={-1}
@@ -1037,6 +1079,14 @@ export default function Home() {
                   setNotice("Local projects cleared.");
                 }
               }}
+            />
+          )}
+          {view === "operations" && (
+            <Operations
+              projects={projects}
+              navigate={navigate}
+              language={language}
+              download={download}
             />
           )}
           {view === "team" && (
