@@ -147,7 +147,9 @@ export default function ContextManager({
       </section>
       <section className="panel studioPanel">
         <h2>Project memory</h2>
-        <small>{memory.length}/40 entries · Project-specific, local-first</small>
+        <small>
+          {memory.length}/40 entries · Project-specific, local-first
+        </small>
         <p>
           Knowledge notes preserve reviews and approval. Decisions, constraints
           and blockers require impact confirmation before clearing prior work.
