@@ -7,6 +7,7 @@ import {
   hasSecret,
 } from "../lib/redact.mjs";
 import { useState } from "react";
+import { scoreBlueprint } from "../lib/blueprint-quality.mjs";
 import {
   sections,
   starterBlueprint,
@@ -39,7 +40,8 @@ export default function Studio({
     [msg, setMsg] = useState(""),
     [section, setSection] = useState("brief"),
     [taskId, setTaskId] = useState(""),
-    [report, setReport] = useState("");
+    [report, setReport] = useState(""),
+    [candidate, setCandidate] = useState(null);
   if (!p)
     return (
       <section className="panel">
@@ -59,6 +61,7 @@ export default function Studio({
     return true;
   };
   const generate = async () => {
+    if (busy) return;
     if (!key.trim()) {
       setMsg("Enter your selected provider API key.");
       return;
@@ -88,6 +91,7 @@ export default function Studio({
     )
       return;
     setBusy(true);
+    setCandidate(null);
     setMsg("Generating validated documents and tasks...");
     try {
       const res = await fetch("/api/blueprint", {
@@ -97,8 +101,9 @@ export default function Studio({
           ...(session?.token ? { "x-vibeforge-session": session.token } : {}),
           "x-provider-key": key.trim(),
         },
+        signal: AbortSignal.timeout(65000),
         body: JSON.stringify({
-          project: {
+          project: redactData({
             name: p.name,
             type: p.type,
             idea: p.idea,
@@ -107,7 +112,7 @@ export default function Studio({
             repositoryContext: includeRepo
               ? JSON.stringify(p.repository || {}).slice(0, 8000)
               : "",
-          },
+          }),
           model,
           provider,
           custom: { baseURL, format, auth, jsonMode },
@@ -115,20 +120,11 @@ export default function Studio({
       });
       const data = await res.json();
       if (!res.ok) throw Error(data.error || "Generation failed");
-      if (
-        !replaceBlueprint(
-          validateBlueprint(data.blueprint),
-          "AI-generated draft · " + currentProvider.label + " / " + model,
-        )
-      ) {
-        setMsg("Replacement cancelled. Existing blueprint retained.");
-        return;
-      }
-      setMsg(
-        "Blueprint generated. Review assumptions and approve before implementation.",
-      );
+      const blueprint = validateBlueprint(data.blueprint);
+      setCandidate({ blueprint, source: "AI-generated draft · " + currentProvider.label + " / " + model, base: p });
+      setMsg("Candidate generated. Review its quality and apply explicitly. Existing work is unchanged.");
     } catch (e) {
-      setMsg(e.message);
+      setMsg((e.name==="TimeoutError"||e.name==="AbortError"?"Request timed out.":e.message)+" Existing blueprint retained. No automatic retry.");
     } finally {
       setKey("");
       setBusy(false);
@@ -411,6 +407,20 @@ export default function Studio({
         </button>
         <p role="status">{msg}</p>
       </section>
+      {candidate && (
+        <section className="panel studioPanel">
+          <h2>Generated candidate — not applied</h2>
+          <BlueprintScore blueprint={candidate.blueprint} />
+          <p>{candidate.blueprint.tasks.length} tasks · {candidate.blueprint.questions.length} open questions</p>
+          <details><summary>Preview specification</summary>{sections.map(([id,label])=><div key={id}><h3>{label}</h3><pre>{candidate.blueprint.documents[id]}</pre></div>)}</details>
+          <button disabled={busy || candidate.base!==p} onClick={()=>{
+            if(replaceBlueprint(candidate.blueprint,candidate.source)){setCandidate(null);setMsg("Candidate applied as draft. Review and approve before implementation.");}
+          }}>Apply candidate</button>
+          <button className="ghost" onClick={()=>dl(JSON.stringify(candidate.blueprint,null,2),"blueprint-candidate.json","application/json")}>Export candidate</button>
+          <button className="ghost" onClick={()=>setCandidate(null)}>Discard candidate</button>
+          {candidate.base!==p&&<p role="status">Project changed since generation. Export candidate or generate again; stale candidate cannot overwrite current work.</p>}
+        </section>
+      )}
       {b && (
         <>
           <div className="stats studioStats">
@@ -430,6 +440,7 @@ export default function Studio({
             ))}
           </div>
           <section className="panel">
+            <BlueprintScore blueprint={b} />
             <h2>Decisions and assumptions</h2>
             <small>{p.blueprintSource}</small>
             <h3>Assumptions</h3>
@@ -682,4 +693,15 @@ export default function Studio({
       )}
     </>
   );
+}
+
+function BlueprintScore({ blueprint }) {
+  const q=scoreBlueprint(blueprint);
+  return <div className="summary">
+    <h2>Blueprint quality · {q.score}/100</h2>
+    <small>Deterministic heuristic only; not proof of correctness or release readiness.</small>
+    {q.breakdown.map(x=><p key={x.label}>{x.label}: {x.score}/{x.max}</p>)}
+    <p>{q.tracedCount}/{q.requirementCount} requirement IDs referenced in tasks · {q.openQuestions} open questions</p>
+    {q.warnings.map(w=><p key={w}>• {w}</p>)}
+  </div>;
 }
