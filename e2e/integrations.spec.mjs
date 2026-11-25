@@ -592,8 +592,7 @@ test("collaboration shares only a brief and imports an independent draft", async
           status: 200,
           headers,
           json: rows.filter(
-            (row) =>
-              "eq." + row.id === exactId && row.recipient_id === owner,
+            (row) => "eq." + row.id === exactId && row.recipient_id === owner,
           ),
         });
       }
