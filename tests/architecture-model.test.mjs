@@ -83,7 +83,10 @@ test("local draft storage is isolated by project and never overwrites without co
     removeItem: (key) => values.delete(key),
   };
   const model = addEntity(emptyArchitecture(), "Booking", "id:uuid");
-  assert.equal(saveArchitectureDraft(storage, "one", model, () => false), true);
+  assert.equal(
+    saveArchitectureDraft(storage, "one", model, () => false),
+    true,
+  );
   assert.deepEqual(loadArchitectureDraft(storage, "one"), model);
   assert.throws(() => loadArchitectureDraft(storage, "two"), /No saved/);
   assert.equal(
