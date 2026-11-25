@@ -9,3 +9,7 @@ Other agents retain manual handoff packages. This pilot is not live remote orche
 ## Conservative Git preflight
 
 The beta preflight rejects inherited Git environment overrides (except the two explicitly reset prompt/locking variables), Git filter attributes on tracked files, submodules and assume-unchanged or skip-worktree index flags. Installed but unused filter definitions do not cause rejection. The Git subprocess also disables lazy object fetching and replacement objects. These safeguards reduce the risk of external helpers or hidden working-tree changes. For affected repositories, inspect the checkout manually rather than disabling project settings or discarding work. This is a conservative check for a trusted Git installation and checkout, not a sandbox or comprehensive integrity proof. The automated fixtures exercise the new rejection paths.
+
+## Assignment-bound receipts
+
+New packages include the assigned role and assignment timestamp in JOB.json and the runner receipt. Import rejects mismatched assignment metadata and finish times before assignment. Older receipts without these fields require manual evidence review; download a fresh package for new sessions. These checks reduce accidental reuse after reassignment; unsigned receipts can still be edited or replayed within an assignment and do not prove execution.
