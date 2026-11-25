@@ -33,10 +33,22 @@ test("API draft validates unique routes and defaults to no execution", () => {
     "Get current owner's booking",
   );
   assert.throws(() =>
-    addEndpoint(model, "GET", "/api/bookings/{id}", "Authenticated", "Duplicate"),
+    addEndpoint(
+      model,
+      "GET",
+      "/api/bookings/{id}",
+      "Authenticated",
+      "Duplicate",
+    ),
   );
   assert.throws(() =>
-    addEndpoint(model, "GET", "https://example.com", "Authenticated", "External"),
+    addEndpoint(
+      model,
+      "GET",
+      "https://example.com",
+      "Authenticated",
+      "External",
+    ),
   );
   const exported = JSON.parse(exportArchitecture(model));
   assert.equal(exported.status, "Proposed only");
