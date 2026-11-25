@@ -179,6 +179,7 @@ export default function ContextManager({
         <label>
           Note
           <textarea
+            aria-label="Note"
             rows={4}
             maxLength={2400}
             value={body}
