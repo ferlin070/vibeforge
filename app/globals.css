@@ -1978,3 +1978,50 @@ textarea {
     font-size: 23px;
   }
 }
+
+/* RC8: dependency waves retain a readable layout on narrow screens */
+.workflow-lanes {
+  display: grid;
+  gap: 18px;
+  margin: 18px 0;
+}
+.workflow-lane {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 225px), 1fr));
+  gap: 10px;
+  border-left: 2px solid #8068c7;
+  padding-left: 14px;
+}
+.workflow-lane h4 {
+  grid-column: 1 / -1;
+  color: #cbbcff;
+  margin: 0;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.workflow-node {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid #404960;
+  border-radius: 12px;
+  background: #101522;
+  overflow-wrap: anywhere;
+}
+.workflow-node h3 {
+  margin: 8px 0;
+}
+.workflow-node button {
+  margin-top: auto;
+  max-width: 100%;
+  white-space: normal;
+}
+@media (max-width: 650px) {
+  .workflow-lane {
+    padding-left: 10px;
+  }
+}
