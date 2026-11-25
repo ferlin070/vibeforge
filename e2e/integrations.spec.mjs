@@ -87,6 +87,8 @@ test("mocked cloud sign-in, explicit backup, invalid snapshot exclusion and logo
           { id: body.id, project: body.project, updated_at: body.updated_at },
         ],
       });
+    } else if (path === "/rest/v1/vibeforge_projects" && method === "DELETE") {
+      await route.fulfill({ status: 200, headers, json: [row] });
     } else {
       await route.fulfill({ status: 204, headers });
     }
