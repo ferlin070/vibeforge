@@ -29,8 +29,8 @@ jobs:
       - name: Show formatting diff on failure
         if: failure() && steps.format.outcome == 'failure'
         run: |
-          npx --no-install prettier --write app/agent-hub.jsx lib/agent-guides.mjs tests/agent-guides.test.mjs
-          git --no-pager diff -- app/agent-hub.jsx lib/agent-guides.mjs tests/agent-guides.test.mjs
+          npx --no-install prettier --write app/agent-hub.jsx lib/agent-guides.mjs tests/agent-guides.test.mjs app/agent-workflow.jsx lib/agent-workflow.mjs tests/agent-workflow.test.mjs
+          git --no-pager diff -- app/agent-hub.jsx lib/agent-guides.mjs tests/agent-guides.test.mjs app/agent-workflow.jsx lib/agent-workflow.mjs tests/agent-workflow.test.mjs
       - run: npx --no-install playwright install --with-deps chromium
       - run: npm run test:e2e
         env:
