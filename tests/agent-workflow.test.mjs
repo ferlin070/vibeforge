@@ -58,9 +58,7 @@ test("workflow waves respect dependencies even when task order is reversed", () 
   for (const task of tasks)
     for (const dependency of task.dependencies)
       assert.ok(index.get(dependency) < index.get(task.id));
-  assert.throws(() =>
-    workflowLanes([{ id: "a", dependencies: ["a"] }]),
-  );
+  assert.throws(() => workflowLanes([{ id: "a", dependencies: ["a"] }]));
 });
 
 test("workflow suggestions assign only ready unassigned tasks", () => {
