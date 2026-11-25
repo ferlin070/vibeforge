@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import ArchitectureModel from "./architecture-model.jsx";
 import { architectureOptions, architecturePlan } from "../lib/architect.mjs";
 
 export default function Architect({ project }) {
@@ -89,6 +90,7 @@ export default function Architect({ project }) {
         for full blueprint generation with your selected provider.
       </p>
       {message && <p role="status">{message}</p>}
+      <ArchitectureModel />
     </section>
   );
 }
