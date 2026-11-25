@@ -14,6 +14,7 @@ import ContextManager from "./context.jsx";
 import Mission from "./mission.jsx";
 import Quality from "./quality.jsx";
 import Guide from "./guide.jsx";
+import DashboardFocus from "./dashboard.jsx";
 import {
   applyProjectPatch,
   impactOf,
@@ -639,6 +640,7 @@ export default function Home() {
                   </article>
                 ))}
               </div>
+              <DashboardFocus project={p} navigate={go} />
               <div className="quickstart">
                 <div>
                   <span className="eyebrow">GET STARTED</span>

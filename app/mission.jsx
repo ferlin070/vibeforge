@@ -42,7 +42,10 @@ export default function Mission({
       (agents.includes(p.agent) ? p.agent : "Universal");
   const run = (fn) => {
     try {
-      update(fn());
+      if (!update(fn())) {
+        setMsg("Change not saved. Existing work retained.");
+        return;
+      }
       setMsg("Saved locally.");
     } catch (e) {
       setMsg(e.message);

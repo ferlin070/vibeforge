@@ -9,6 +9,7 @@ import {
   resume,
   agentPrompt,
   agentFiles,
+  reportTemplate,
 } from "../lib/context.mjs";
 const p = {
   id: "fixture",
@@ -85,4 +86,24 @@ test("portable agent context contains instructions and documents but excludes ar
   ])
     assert.ok(files[key]);
   assert.ok(!files["context.json"].includes("do-not-export"));
+});
+
+test("agent handoff identifies target commit and includes blank evidence template", () => {
+  const project = {
+    ...p,
+    repository: { repo: "owner/repo", branch: "feature/test", sha: "a".repeat(40) },
+  };
+  const prompt = agentPrompt(project, "Codex", "Build", "TASK-001");
+  assert.match(prompt, /feature\/test/);
+  assert.match(prompt, /Before any edit/);
+  assert.match(prompt, /exit codes/);
+  const files = agentFiles(project);
+  const manifest = JSON.parse(files["TASK_MANIFEST.json"]);
+  assert.equal(manifest.repository.branch, "feature/test");
+  assert.equal(manifest.tasks[0].status, "Ready");
+  assert.equal(manifest.tasks[1].status, "Blocked");
+  assert.match(files["REPORT_TEMPLATE.md"], /Not verified/);
+  assert.equal(files["REPORT_TEMPLATE.md"], reportTemplate());
+  const draft = JSON.parse(agentFiles({ ...project, blueprintApproved: false })["TASK_MANIFEST.json"]);
+  assert.ok(draft.tasks.every((task) => task.status === "Awaiting approval"));
 });

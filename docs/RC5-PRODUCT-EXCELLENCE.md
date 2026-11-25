@@ -12,3 +12,7 @@ Staging commit cf27003 passed 127 unit/integration tests and nine browser tests.
 - Existing project storage format remains unchanged. No provider charges, database migrations, automatic approvals or production releases.
 
 Remaining product excellence work: richer handoff, version history and autosave design (separate approval for persistence changes), brand email template design and further live provider and cross-account isolation tests. Verify the exact commit in CI before any staging deployment.
+
+## Increment 2 — command center and handoff
+
+The final increment 1 commit 09b7bfb passed [CI 45574467967](https://github.com/ferlin070/vibeforge/actions/runs/45574467967). Increment 2 adds an active-project command center using the existing mission board and readiness gates, with reviewed tasks separate from available, pending review and blocked tasks. The readiness counts are advisory and do not imply deployment permission. The handoff includes the scanned repository branch/commit, safe execution checklist and structured report expectations. ZIP exports include TASK_MANIFEST.json and REPORT_TEMPLATE.md, a blank template, never fabricated evidence. Mission Control reports a cancelled or failed update honestly. No persistence schema changes. Cloud autosave, broader visual redesign and branded email templates remain separate workstreams.

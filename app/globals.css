@@ -1504,3 +1504,98 @@ pre {
 .quality-meter meter::-webkit-meter-optimum-value {
   background: #9d85f9;
 }
+
+/* RC5 command center */
+.dashboard-focus {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 16px;
+  margin-top: 24px;
+}
+.focus-card {
+  min-width: 0;
+  padding: clamp(16px, 2.5vw, 28px);
+  border: 1px solid #3d385b;
+  border-radius: 18px;
+  background: linear-gradient(145deg, #211b37, #121725 75%);
+  overflow-wrap: anywhere;
+}
+.focus-card h2 {
+  margin: 10px 0;
+  font-size: clamp(22px, 3vw, 28px);
+}
+.focus-status {
+  color: #d5c8ff;
+  font-size: 13px;
+  padding: 10px 0;
+}
+.focus-progress {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 15px;
+  font-size: 13px;
+}
+.focus-card progress {
+  width: 100%;
+  height: 9px;
+  accent-color: #a78bfa;
+}
+.focus-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 18px 0;
+}
+.focus-stats div {
+  padding: 12px;
+  border: 1px solid #37364d;
+  border-radius: 10px;
+  background: #111625;
+}
+.focus-stats strong,
+.focus-stats small {
+  display: block;
+}
+.focus-stats strong {
+  color: #f0eaff;
+  font-size: 23px;
+}
+.focus-stats small {
+  font-size: 12px;
+  line-height: 1.5;
+}
+.focus-gates {
+  list-style: none;
+  margin: 14px 0;
+  padding: 0;
+}
+.focus-gates li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid #333249;
+  font-size: 13px;
+}
+.gate-ok {
+  color: #a7e8c7;
+}
+.gate-pending {
+  color: #f5d6a4;
+}
+.focus-card button {
+  max-width: 100%;
+  white-space: normal;
+}
+@media (max-width: 1000px) {
+  .dashboard-focus {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 360px) {
+  .focus-stats {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

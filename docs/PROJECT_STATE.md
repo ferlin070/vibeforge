@@ -26,3 +26,5 @@ The remaining live-service and operator release gates require completion before 
 ## RC5 product excellence increment
 
 See [RC5 product excellence](RC5-PRODUCT-EXCELLENCE.md). Branch selection, captured-file filtering, text-only document reading, and more specific blueprint quality diagnostics are implemented without changing stored project schema.
+
+RC5 increment 2 adds the active-project dashboard command center and task handoff/report files, with existing approval and dependency gates preserved. No automatic agent execution or database changes.

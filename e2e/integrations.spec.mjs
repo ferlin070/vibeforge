@@ -247,3 +247,13 @@ test("document reading view preserves text and returns to editor", async ({
   await page.getByRole("button", { name: "Edit Markdown" }).click();
   await expect(editor).toHaveValue(original);
 });
+
+test("dashboard command center navigates to approved handoff queue", async ({ page }) => {
+  await page.goto("/?view=overview");
+  const center = page.getByRole("region", { name: "Active project command center" });
+  await expect(center).toBeVisible();
+  await expect(center.getByText("Booking studio", { exact: true })).toBeVisible();
+  await expect(center.getByText("0/4", { exact: true })).toBeVisible();
+  await center.getByRole("button", { name: "Continue implementation handoff →" }).click();
+  await expect(page.getByRole("heading", { name: "Mission Control", exact: true })).toBeVisible();
+});
