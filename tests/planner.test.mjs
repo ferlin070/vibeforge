@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { stages, makeBrief, makePrompt } from "../lib/planner.mjs";
 import { starterBlueprint } from "../lib/blueprint.mjs";
+import { agents, agentGuidance, agentPrompt } from "../lib/context.mjs";
 const p = {
   name: "Demo",
   type: "Website",
@@ -25,7 +26,7 @@ test("all workflow stages and prompt modes produce a handoff", () => {
       assert.ok(makePrompt(p, s[0], m).includes(s[1]));
 });
 
-test("stage prompts include agent guidance and only relevant approved documents", () => {
+test("stage prompts include only relevant approved documents", () => {
   const project = {
     ...p,
     blueprint: starterBlueprint(p),
@@ -45,7 +46,7 @@ test("stage prompts include agent guidance and only relevant approved documents"
   assert.match(result, /"status": "Blocked"/);
 });
 
-test("unapproved blueprints and generic Build prompts do not authorize edits", () => {
+test("generic Build prompts do not authorize edits", () => {
   const project = {
     ...p,
     blueprint: starterBlueprint(p),
@@ -57,7 +58,7 @@ test("unapproved blueprints and generic Build prompts do not authorize edits", (
   assert.match(result, /Awaiting approval/);
 });
 
-test("prompt redacts recognized credentials before displaying project context", () => {
+test("prompt redacts recognized credentials", () => {
   const project = {
     ...p,
     idea: "api_key=synthetic-secret-value",
@@ -71,14 +72,45 @@ test("prompt redacts recognized credentials before displaying project context", 
     ],
   };
   const result = makePrompt(project, "discovery", "Plan");
-  assert.doesNotMatch(result, /synthetic-secret-value|synthetic-password-value/);
+  assert.doesNotMatch(
+    result,
+    /synthetic-secret-value|synthetic-password-value/,
+  );
   assert.match(result, /\[REDACTED\]/);
   assert.match(result, /Credential example/);
 });
 
-test("unknown agent, mode and stage fall back to safe planning defaults", () => {
+test("unknown inputs fall back to safe planning defaults", () => {
   const result = makePrompt({ ...p, agent: "Unknown" }, "bad", "__proto__");
   assert.match(result, /Target agent: Universal/);
   assert.match(result, /Mode: Plan/);
   assert.match(result, /Stage: Discovery/);
+});
+
+test("all registered agents share guidance across both handoff engines", () => {
+  assert.equal(new Set(agents).size, agents.length);
+  for (const name of [
+    "OpenCode",
+    "Hermes Agent",
+    "OpenClaw",
+    "OMP (oh-my-pi)",
+    "DeepSeek Harness",
+    "Aider",
+    "Cline",
+    "Continue",
+    "Qwen Code",
+    "Pi",
+    "Goose",
+    "OpenHands",
+  ]) {
+    assert.ok(agents.includes(name));
+    const project = { ...p, agent: name };
+    const prompt = makePrompt(project, "architecture", "Plan");
+    assert.ok(prompt.includes("Target agent: " + name));
+    assert.ok(prompt.includes(agentGuidance(name)));
+    const handoff = agentPrompt(project, name, "Build", "TASK-001");
+    assert.ok(handoff.includes("Agent: " + name));
+    assert.ok(handoff.includes(agentGuidance(name)));
+    assert.match(handoff, /Do not implement/);
+  }
 });
