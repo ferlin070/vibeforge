@@ -140,6 +140,27 @@ test("receipt remains unverified and is bound to current task and repository", (
     reviewLocalReceipt(
       p,
       "TASK-001",
+      JSON.stringify({ ...receipt, role: "qa" }),
+    ),
+  );
+  assert.throws(() =>
+    reviewLocalReceipt(
+      p,
+      "TASK-001",
+      JSON.stringify({ ...receipt, assignedAt: "2026-11-24" }),
+    ),
+  );
+  assert.throws(() =>
+    reviewLocalReceipt(
+      p,
+      "TASK-001",
+      JSON.stringify({ ...receipt, finishedAt: "2026-11-24T00:00:00.000Z" }),
+    ),
+  );
+  assert.throws(() =>
+    reviewLocalReceipt(
+      p,
+      "TASK-001",
       JSON.stringify({ ...receipt, taskId: "TASK-002" }),
     ),
   );
