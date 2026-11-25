@@ -19,15 +19,15 @@ const p = {
   blueprint: starterBlueprint({ name: "Sample", idea: "Build a website" }),
   evidence: {},
 };
-test("memory changes invalidate approval and reviews", () => {
+test("memory patch contains only memory; central impact policy owns invalidation", () => {
   const patch = newMemory(
     p,
     { category: "Decision", title: "Stack", body: "Use approved stack" },
     "id",
     "2026-01-01",
   );
-  assert.equal(patch.blueprintApproved, false);
-  assert.deepEqual(patch.evidence, {});
+  assert.equal(Object.hasOwn(patch, "blueprintApproved"), false);
+  assert.equal(Object.hasOwn(patch, "evidence"), false);
   assert.equal(memoryOf(patch)[0].title, "Stack");
   assert.throws(() =>
     newMemory(p, { category: "bad", title: "t", body: "x" }, "id", "now"),

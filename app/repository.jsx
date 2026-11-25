@@ -28,13 +28,6 @@ export default function Repository({
       setMsg("Sign in via Cloud account before scanning a repository.");
       return;
     }
-    if (
-      result &&
-      !confirm(
-        "Replace saved inventory and invalidate blueprint approval and task reviews?",
-      )
-    )
-      return;
     setBusy(true);
     setMsg("Reading repository metadata and tree…");
     try {
@@ -49,11 +42,10 @@ export default function Repository({
       });
       const d = await r.json();
       if (!r.ok) throw Error(d.error);
-      update({
-        repository: d.inventory,
-        blueprintApproved: false,
-        evidence: {},
-      });
+      if (!update({ repository: d.inventory })) {
+        setMsg("Replacement cancelled. Existing inventory retained.");
+        return;
+      }
       setMsg(
         "Inventory saved locally. Review evidence before generating a blueprint.",
       );

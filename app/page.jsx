@@ -8,7 +8,8 @@ import ContextManager from "./context.jsx";
 import Mission from "./mission.jsx";
 import Quality from "./quality.jsx";
 import Guide from "./guide.jsx";
-import { applyProjectPatch } from "../lib/mission.mjs";
+import { applyProjectPatch, impactOf, impactMessage } from "../lib/mission.mjs";
+import { agents } from "../lib/context.mjs";
 import { stages, makeBrief, makePrompt } from "../lib/planner.mjs";
 const empty = {
   name: "",
@@ -139,13 +140,18 @@ export default function Home() {
       ),
     );
   };
-  const saveDoc = () => {
-    setProjects((x) =>
-      x.map((y) =>
-        y.id === selected ? applyProjectPatch(y, { document: doc }) : y,
-      ),
+  const updateActive = (patch) => {
+    if (!p) return false;
+    const impact = impactOf(p, patch);
+    if (impact.invalidates && !confirm(impactMessage(impact))) return false;
+    setProjects((xs) =>
+      xs.map((x) => (x.id === p.id ? applyProjectPatch(x, patch) : x)),
     );
-    setNotice("Document saved on this browser.");
+    return true;
+  };
+  const saveDoc = () => {
+    if (updateActive({ document: doc }))
+      setNotice("Document saved on this browser.");
   };
   const copy = async (t) => {
     try {
@@ -699,13 +705,7 @@ export default function Home() {
               projects={projects}
               selected={selected}
               select={setSelected}
-              update={(patch) =>
-                setProjects((xs) =>
-                  xs.map((x) =>
-                    x.id === p?.id ? applyProjectPatch(x, patch) : x,
-                  ),
-                )
-              }
+              update={updateActive}
               newProject={() => go("new")}
             />
           )}
@@ -717,13 +717,7 @@ export default function Home() {
               projects={projects}
               selected={selected}
               select={setSelected}
-              update={(patch) =>
-                setProjects((xs) =>
-                  xs.map((x) =>
-                    x.id === p?.id ? applyProjectPatch(x, patch) : x,
-                  ),
-                )
-              }
+              update={updateActive}
               newProject={() => go("new")}
             />
           )}
@@ -734,13 +728,7 @@ export default function Home() {
               projects={projects}
               selected={selected}
               select={setSelected}
-              update={(patch) =>
-                setProjects((xs) =>
-                  xs.map((x) =>
-                    x.id === p?.id ? applyProjectPatch(x, patch) : x,
-                  ),
-                )
-              }
+              update={updateActive}
               newProject={() => go("new")}
             />
           )}
@@ -751,13 +739,7 @@ export default function Home() {
               projects={projects}
               selected={selected}
               select={setSelected}
-              update={(patch) =>
-                setProjects((xs) =>
-                  xs.map((x) =>
-                    x.id === p?.id ? applyProjectPatch(x, patch) : x,
-                  ),
-                )
-              }
+              update={updateActive}
               newProject={() => go("new")}
               openStudio={() => go("studio")}
             />
@@ -770,13 +752,7 @@ export default function Home() {
               projects={projects}
               selected={selected}
               select={setSelected}
-              update={(patch) =>
-                setProjects((xs) =>
-                  xs.map((x) =>
-                    x.id === p?.id ? applyProjectPatch(x, patch) : x,
-                  ),
-                )
-              }
+              update={updateActive}
               newProject={() => go("new")}
             />
           )}
@@ -970,7 +946,20 @@ export default function Home() {
                           ))}
                         </select>
                       </label>
-                      <p>Target: {p.agent}</p>
+                      <label>
+                        Preferred coding agent
+                        <select
+                          value={p.agent}
+                          onChange={(e) => updateActive({ agent: e.target.value })}
+                        >
+                          {agents.map((agent) => (
+                            <option key={agent}>{agent}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <small>
+                        Changes future prompts only; existing assignments and reviews stay intact.
+                      </small>
                       <small>
                         Template-based output. Review and approve the task
                         before giving it to a coding agent.

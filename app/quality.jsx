@@ -51,7 +51,10 @@ export default function Quality({
     analysis = analyzeLog(details);
   const save = (fn) => {
     try {
-      update({ quality: fn() });
+      if (!update({ quality: fn() })) {
+        setMsg("Change cancelled. Existing release evidence retained.");
+        return;
+      }
       setMsg("Saved locally.");
     } catch (e) {
       setMsg(e.message);

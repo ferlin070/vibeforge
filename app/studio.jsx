@@ -53,14 +53,10 @@ export default function Studio({
     evidence = p.evidence || {},
     t = b?.tasks.find((x) => x.id === taskId) || b?.tasks[0];
   const replaceBlueprint = (blueprint, source) => {
-    update({
-      blueprint,
-      blueprintSource: source,
-      blueprintApproved: false,
-      evidence: {},
-    });
+    if (!update({ blueprint, blueprintSource: source })) return false;
     setTaskId("");
     setReport("");
+    return true;
   };
   const generate = async () => {
     if (!key.trim()) {
@@ -87,7 +83,7 @@ export default function Studio({
     if (
       b &&
       !confirm(
-        "Replace current blueprint and task reviews? Export your current kit first.",
+        "Generate a candidate blueprint? Provider charges may apply. Existing work is unchanged until you confirm the impact.",
       )
     )
       return;
@@ -119,10 +115,15 @@ export default function Studio({
       });
       const data = await res.json();
       if (!res.ok) throw Error(data.error || "Generation failed");
-      replaceBlueprint(
-        validateBlueprint(data.blueprint),
-        "AI-generated draft · " + currentProvider.label + " / " + model,
-      );
+      if (
+        !replaceBlueprint(
+          validateBlueprint(data.blueprint),
+          "AI-generated draft · " + currentProvider.label + " / " + model,
+        )
+      ) {
+        setMsg("Replacement cancelled. Existing blueprint retained.");
+        return;
+      }
       setMsg(
         "Blueprint generated. Review assumptions and approve before implementation.",
       );
@@ -231,17 +232,12 @@ export default function Studio({
             className="ghost"
             disabled={busy}
             onClick={() => {
-              if (
-                confirm(
-                  "Redact recognized secrets in idea/document? Approval and task reviews will reset.",
-                )
-              )
-                update({
-                  idea: redactText(p.idea),
-                  ...(typeof p.document === "string"
-                    ? { document: redactText(p.document) }
-                    : {}),
-                });
+              update({
+                idea: redactText(p.idea),
+                ...(typeof p.document === "string"
+                  ? { document: redactText(p.document) }
+                  : {}),
+              });
             }}
           >
             Redact project text
@@ -407,8 +403,8 @@ export default function Studio({
           disabled={busy}
           className="ghost"
           onClick={() => {
-            if (!b || confirm("Replace current blueprint and reviews?"))
-              replaceBlueprint(starterBlueprint(p), "Manual template");
+            if (!replaceBlueprint(starterBlueprint(p), "Manual template"))
+              setMsg("Replacement cancelled. Existing blueprint retained.");
           }}
         >
           Start manual blueprint
@@ -455,10 +451,7 @@ export default function Studio({
                       "I have reviewed documents, assumptions and open questions. Approve this blueprint?",
                     )
                   )
-                    update({
-                      blueprintApproved: !p.blueprintApproved,
-                      evidence: {},
-                    });
+                    update({ blueprintApproved: !p.blueprintApproved });
                 } catch (e) {
                   setMsg(e.message);
                 }
@@ -562,14 +555,12 @@ export default function Studio({
                     ...b,
                     documents: { ...b.documents, [section]: e.target.value },
                   },
-                  blueprintApproved: false,
-                  evidence: {},
                 })
               }
               aria-label="Specification document"
             />
             <small>
-              Edits save locally and invalidate prior approval and task reviews.
+              Scope edits require impact confirmation before saving and clearing prior work.
             </small>
             <br />
             <button

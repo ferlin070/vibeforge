@@ -137,8 +137,8 @@ export default function ContextManager({
       <section className="panel studioPanel">
         <h2>Project memory</h2>
         <p>
-          Record decisions, constraints, knowledge and blockers. Changes
-          conservatively reopen blueprint approval and clear task reviews.
+          Knowledge notes preserve reviews and approval. Decisions, constraints
+          and blockers require impact confirmation before clearing prior work.
         </p>
         <div className="twocol">
           <label>
@@ -174,13 +174,8 @@ export default function ContextManager({
         <button
           disabled={!title.trim() || !body.trim()}
           onClick={() => {
-            if (
-              p.blueprintApproved &&
-              !confirm("Reopen approval and clear task reviews?")
-            )
-              return;
             handle(() => {
-              update(
+              const saved = update(
                 newMemory(
                   p,
                   { category, title, body },
@@ -188,6 +183,7 @@ export default function ContextManager({
                   new Date().toISOString(),
                 ),
               );
+              if (!saved) throw Error("Change cancelled. Note retained.");
               setTitle("");
               setBody("");
             });
@@ -207,14 +203,11 @@ export default function ContextManager({
             <button
               className="ghost"
               onClick={() => {
-                if (confirm("Remove memory entry and reopen approval?"))
-                  handle(() =>
-                    update({
-                      memory: memory.filter((x) => x.id !== m.id),
-                      blueprintApproved: false,
-                      evidence: {},
-                    }),
-                  );
+                if (confirm("Remove this memory entry?"))
+                  handle(() => {
+                    if (!update({ memory: memory.filter((x) => x.id !== m.id) }))
+                      throw Error("Change cancelled. Memory retained.");
+                  });
               }}
             >
               Remove
