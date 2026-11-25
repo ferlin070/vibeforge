@@ -1,5 +1,9 @@
 "use client";
-import { saveSnapshotSafely, snapshotDraft } from "../lib/workspace.mjs";
+import {
+  saveSnapshotSafely,
+  deleteSnapshotSafely,
+  snapshotDraft,
+} from "../lib/workspace.mjs";
 import { useState } from "react";
 import { validateSnapshot } from "../lib/project-schema.mjs";
 import {
@@ -13,8 +17,8 @@ import {
 export default function Cloud({
   projects,
   selected,
-  setProjects,
   setSelected,
+  onRestore,
   session,
   setSession,
   recoveryToken,
@@ -121,8 +125,7 @@ export default function Cloud({
         !confirm("Replace local copy with cloud snapshot?")
       )
         return;
-      setProjects((xs) => [p, ...xs.filter((x) => x.id !== p.id)]);
-      setSelected(p.id);
+      onRestore(row);
       setMsg("Cloud snapshot restored to this browser.");
     } catch (e) {
       setMsg(e.message);
@@ -429,13 +432,18 @@ export default function Cloud({
                   disabled={busy}
                   onClick={() =>
                     run(async () => {
-                      if (!confirm("Delete this cloud snapshot?")) return;
-                      await request(
-                        "/rest/v1/vibeforge_projects?id=eq." +
-                          encodeURIComponent(row.id),
-                        { method: "DELETE" },
-                        session.token,
+                      if (!session || remoteOwner !== session.id)
+                        throw Error("Sign in and list snapshots again.");
+                      const result = await deleteSnapshotSafely(
+                        row,
+                        session,
+                        request,
+                        (timestamp) =>
+                          confirm(
+                            "Delete the cloud snapshot saved " + timestamp + "?",
+                          ),
                       );
+                      if (result.status === "cancelled") return;
                       setRemote((xs) => xs.filter((x) => x.id !== row.id));
                       setMsg("Cloud snapshot deleted.");
                     })
