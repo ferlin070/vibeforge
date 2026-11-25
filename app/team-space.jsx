@@ -17,6 +17,7 @@ import {
   publishBrief,
   readTeamBrief,
   removeMember,
+  renameSpace,
   revokeBrief,
 } from "../lib/team-space.mjs";
 
@@ -24,6 +25,7 @@ export default function TeamSpaces({ project, session, onImport }) {
   const [spaces, setSpaces] = useState([]);
   const [workspace, setWorkspace] = useState(null);
   const [name, setName] = useState("");
+  const [rename, setRename] = useState("");
   const [account, setAccount] = useState("");
   const [newRole, setNewRole] = useState("viewer");
   const [message, setMessage] = useState("");
@@ -107,6 +109,7 @@ export default function TeamSpaces({ project, session, onImport }) {
             const id = event.target.value;
             setWorkspace(null);
             setAccount("");
+            setRename("");
             if (id) run(() => refresh(id));
           }}
         >
@@ -125,6 +128,34 @@ export default function TeamSpaces({ project, session, onImport }) {
             <p>Your role: {role}</p>
             <small>Owner account: {workspace.space.owner_id}</small>
           </div>
+          {role === "owner" && (
+            <>
+              <label>
+                New workspace name
+                <input
+                  value={rename}
+                  maxLength={120}
+                  disabled={busy}
+                  onChange={(event) => setRename(event.target.value)}
+                />
+              </label>
+              <button
+                className="ghost"
+                disabled={busy || !rename.trim()}
+                onClick={() =>
+                  run(async () => {
+                    if (!confirm("Rename this workspace?")) return;
+                    await renameSpace(teamId, rename, session, cloudRequest);
+                    setRename("");
+                    await refresh(teamId);
+                    setMessage("Workspace renamed.");
+                  })
+                }
+              >
+                Rename workspace
+              </button>
+            </>
+          )}
           <h3>Members</h3>
           <small>Showing up to 100 members. Account IDs are private contact data.</small>
           {roles.length > 0 && (
@@ -221,7 +252,7 @@ export default function TeamSpaces({ project, session, onImport }) {
               disabled={busy}
               onClick={() =>
                 run(async () => {
-                  const own = workspace.roster.find((member) => member.user_id === session.id);
+                  const own = workspace.ownMembership;
                   if (!own) throw Error("Refresh the member list before leaving.");
                   if (!confirm("Leave this workspace? Local imported copies remain.")) return;
                   await removeMember(own, session, cloudRequest);
