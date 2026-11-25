@@ -70,9 +70,13 @@ export default function AgentWorkflow({ project, go, update }) {
                 <h4>Wave {lane.level}</h4>
                 {lane.tasks.map((task) => (
                   <article className="workflow-node" key={task.id}>
-                    <small>{task.id} · {task.status}</small>
+                    <small>
+                      {task.id} · {task.status}
+                    </small>
                     <h3>{task.title}</h3>
-                    <p>{task.role} · {task.agent}</p>
+                    <p>
+                      {task.role} · {task.agent}
+                    </p>
                     <small>
                       Requires: {task.dependencies.join(", ") || "None"}
                     </small>
@@ -83,9 +87,20 @@ export default function AgentWorkflow({ project, go, update }) {
                     </p>
                     <button
                       className="ghost"
-                      disabled={task.status !== "Ready" || task.existingAssignment}
+                      disabled={
+                        task.status !== "Ready" || task.existingAssignment
+                      }
                       onClick={() => {
-                        if (!confirm("Assign " + task.id + " to " + task.agent + "? This does not execute the agent.")) return;
+                        if (
+                          !confirm(
+                            "Assign " +
+                              task.id +
+                              " to " +
+                              task.agent +
+                              "? This does not execute the agent.",
+                          )
+                        )
+                          return;
                         try {
                           const patch = assignWorkflowSuggestion(
                             project,
@@ -93,7 +108,11 @@ export default function AgentWorkflow({ project, go, update }) {
                             preferences,
                             new Date().toISOString(),
                           );
-                          setMessage(update(patch) ? "Assignment saved. No handoff or execution recorded." : "Assignment not saved.");
+                          setMessage(
+                            update(patch)
+                              ? "Assignment saved. No handoff or execution recorded."
+                              : "Assignment not saved.",
+                          );
                         } catch (error) {
                           setMessage(error.message);
                         }
@@ -106,7 +125,10 @@ export default function AgentWorkflow({ project, go, update }) {
               </section>
             ))}
           </div>
-          <p>Existing assignments take precedence. No automatic execution or approval.</p>
+          <p>
+            Existing assignments take precedence. No automatic execution or
+            approval.
+          </p>
           <div className="actions">
             <button
               className="ghost"
