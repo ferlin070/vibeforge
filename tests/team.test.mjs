@@ -9,8 +9,14 @@ import {
 } from "../lib/team.mjs";
 
 const sender = { id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", token: "sender" };
-const recipient = { id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", token: "recipient" };
-const outsider = { id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc", token: "outsider" };
+const recipient = {
+  id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+  token: "recipient",
+};
+const outsider = {
+  id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+  token: "outsider",
+};
 const now = "2026-11-25T00:00:00Z";
 const project = {
   id: "fixture",
@@ -39,19 +45,25 @@ test("sharing uses only redacted brief and requires confirmation", async () => {
     return [row];
   };
   assert.equal(
-    (await sendSharedDraft(project, recipient.id, sender, request, () => false)).status,
+    (await sendSharedDraft(project, recipient.id, sender, request, () => false))
+      .status,
     "cancelled",
   );
   assert.equal(calls.length, 0);
   assert.equal(
-    (await sendSharedDraft(project, recipient.id, sender, request, () => true)).status,
+    (await sendSharedDraft(project, recipient.id, sender, request, () => true))
+      .status,
     "sent",
   );
   const body = JSON.parse(calls[0][1].body);
   assert.equal(body.sender_id, sender.id);
   assert.equal(body.recipient_id, recipient.id);
   assert.deepEqual(Object.keys(body.draft).sort(), [
-    "agent", "audience", "idea", "name", "type",
+    "agent",
+    "audience",
+    "idea",
+    "name",
+    "type",
   ]);
   assert.doesNotMatch(JSON.stringify(body), /synthetic-secret/);
   assert.equal(calls[0][2], sender.token);
@@ -91,7 +103,12 @@ test("share listing filters unexpected rows and revocation is sender only", asyn
     "cancelled",
   );
   await assert.rejects(
-    revokeSharedDraft(row, sender, async () => [], () => true),
+    revokeSharedDraft(
+      row,
+      sender,
+      async () => [],
+      () => true,
+    ),
     /not found/,
   );
   assert.equal(
