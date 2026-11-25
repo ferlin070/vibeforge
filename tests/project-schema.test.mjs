@@ -12,6 +12,8 @@ import {
   refreshSession,
   recoveryFromFragment,
   requestAccountEmail,
+  authRedirect,
+  emailAuthPath,
   resetRecoveredPassword,
 } from "../lib/cloud-auth.mjs";
 
@@ -147,12 +149,14 @@ test("recovery and resend use fixed endpoints and update user with recovery toke
     "test@example.invalid",
     "https://app.example/",
     request,
+    "https://app.example/",
   );
   await requestAccountEmail(
     "resend",
     "test@example.invalid",
     "https://app.example/",
     request,
+    "https://app.example/",
   );
   await resetRecoveredPassword("a.b.c", "new-password-fixture", request);
   assert.match(calls[0].path, /^\/auth\/v1\/recover\?redirect_to=/);
@@ -163,4 +167,46 @@ test("recovery and resend use fixed endpoints and update user with recovery toke
   assert.equal(calls[2].path, "/auth/v1/user");
   assert.equal(calls[3].opts.method, "PUT");
   assert.equal(calls[3].token, "a.b.c");
+});
+
+test("email callback is exact and restricted to approved application roots", () => {
+  const list = "https://app.example/, http://127.0.0.1:4173/";
+  assert.equal(authRedirect("https://app.example", list), "https://app.example/");
+  assert.equal(
+    authRedirect("http://127.0.0.1:4173", list),
+    "http://127.0.0.1:4173/",
+  );
+  for (const value of [
+    "https://app.example.evil/",
+    "https://evil@app.example/",
+    "https://app.example/?next=evil",
+    "https://app.example/#fragment",
+    "https://app.example/path",
+    "http://app.example/",
+    "http://127.0.0.1:9999/",
+    "javascript:alert(1)",
+  ])
+    assert.throws(() => authRedirect(value, list));
+  assert.throws(() => authRedirect("https://app.example", ""));
+  assert.throws(() => authRedirect("https://foo.example", "https://*.example"));
+});
+
+test("all email operations use approved redirect and reject before network", async () => {
+  for (const kind of ["signup", "recover", "resend"])
+    assert.equal(
+      emailAuthPath(kind, "https://app.example", "https://app.example/"),
+      "/auth/v1/" + kind + "?redirect_to=https%3A%2F%2Fapp.example%2F",
+    );
+  await assert.rejects(
+    requestAccountEmail(
+      "recover",
+      "test@example.invalid",
+      "https://evil.example",
+      async () => {
+        assert.fail("Unexpected network request");
+      },
+      "https://app.example",
+    ),
+    /not configured/,
+  );
 });

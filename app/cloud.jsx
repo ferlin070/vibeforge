@@ -6,6 +6,7 @@ import {
   cloudConfigured,
   cloudRequest,
   sessionFrom,
+  emailAuthPath,
   requestAccountEmail,
   resetRecoveredPassword,
 } from "../lib/cloud-auth.mjs";
@@ -35,7 +36,9 @@ export default function Cloud({
     try {
       setRemote([]);
       const d = await request(
-        signup ? "/auth/v1/signup" : "/auth/v1/token?grant_type=password",
+        signup
+          ? emailAuthPath("signup", window.location.origin)
+          : "/auth/v1/token?grant_type=password",
         { method: "POST", body: JSON.stringify({ email, password }) },
       );
       if (d.access_token && d.user?.id) {
@@ -292,7 +295,7 @@ export default function Cloud({
                   await requestAccountEmail(
                     "recover",
                     email,
-                    window.location.origin + window.location.pathname,
+                    window.location.origin,
                   );
                   setMsg(
                     "If the address is eligible, check your email for a password reset link.",
@@ -310,7 +313,7 @@ export default function Cloud({
                   await requestAccountEmail(
                     "resend",
                     email,
-                    window.location.origin + window.location.pathname,
+                    window.location.origin,
                   );
                   setMsg(
                     "If confirmation is pending, check your email for a new link.",
@@ -323,6 +326,11 @@ export default function Cloud({
             <button className="ghost fullwidth" onClick={onContinue}>
               Continue in local mode →
             </button>
+            <small>
+              Registration and recovery emails require an approved callback URL
+              and working email delivery. If unavailable, use local mode or
+              contact the service operator.
+            </small>
             <small>
               Session stays in memory across workspace navigation; sign in again
               after reload or refresh failure. Access and refresh tokens are

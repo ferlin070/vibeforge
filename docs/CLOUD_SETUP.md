@@ -5,3 +5,7 @@ Create a dedicated Supabase project; do not reuse a different product database. 
 ## Existing environment and recovery
 
 The audit must not create a new project, replay initial schema SQL, modify Auth settings or send real emails without approval. For an existing dedicated VibeForge environment, inspect the current schema, policies and configuration read-only before any migration. Use separate approved test users for live verification. Client validation limits project snapshots to 1,200,000 UTF-8 bytes before database checks. A cloud restore validates row identity and nested data; invalid snapshots are excluded, not deleted. Do not mistake a successful mock test for live email delivery or RLS verification.
+
+## Email callback readiness (RC4)
+
+Set `NEXT_PUBLIC_VIBEFORGE_AUTH_REDIRECT_URLS` to comma-separated exact application root URLs in the intended environment. Add the same URLs to Supabase Auth URL Configuration, verify Site URL and email templates, and configure SMTP before enabling signup or recovery. The application rejects email requests on unapproved origins. Sign-in and local planning remain available. Avoid wildcard callbacks and do not configure unrelated or production URLs during staging. This client-side check complements, but does not replace, Supabase server-side redirect and signup controls. See [Supabase redirect URLs](https://supabase.com/docs/guides/auth/redirect-urls).

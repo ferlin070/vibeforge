@@ -40,9 +40,27 @@ export default function Guide({ go, projects, exportAll, clearAll }) {
   ];
   return (
     <>
-      <div className="eyebrow">VIBEFORGE · RELEASE CANDIDATE 1.0</div>
+      <div className="eyebrow">VIBEFORGE · PRIVATE RELEASE CANDIDATE</div>
       <h1>Start here</h1>
       <p>From idea to production, with human oversight at every stage.</p>
+      <section className="panel studioPanel">
+        <h2>Choose your starting point</h2>
+        <p>
+          Start locally without an account or API key. Sign in only when you need
+          cloud snapshots or hosted AI and GitHub services. AI generation may
+          incur charges on your own provider account.
+        </p>
+        <div className="actions">
+          <button onClick={() => go("new")}>Start a local project</button>
+          <button className="ghost" onClick={() => go("cloud")}>
+            Set up cloud access
+          </button>
+        </div>
+        <small>
+          This private release candidate is not a public production service.
+          Export important work and review all generated plans.
+        </small>
+      </section>
       <div className="tiles guidegrid">
         {steps.map(([id, n, t, d]) => (
           <article key={id}>
@@ -102,7 +120,7 @@ export default function Guide({ go, projects, exportAll, clearAll }) {
           VibeForge does not execute coding agents, run arbitrary repository
           code, certify test results or deploy user projects automatically.
           Custom gateways require sign-in, public HTTPS and approved hosts in
-          production. Always verify actual test evidence and obtain release
+          hosted deployments. Always verify actual test evidence and obtain release
           approval.
         </p>
       </section>
