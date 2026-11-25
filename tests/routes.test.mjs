@@ -339,24 +339,18 @@ test("REST config selects complete pairs and refuses mixed credentials", () => {
     }),
     { url: "https://explicit.example", token: "explicit-token" },
   );
-  assert.throws(
-    () => redisConfig({ ...kv, UPSTASH_REDIS_REST_URL: "https://other.example" }),
-    /Incomplete/,
-  );
-  assert.throws(
-    () =>
-      redisConfig({
-        UPSTASH_REDIS_REST_URL: "https://other.example",
-        KV_REST_API_TOKEN: "kv-token",
-      }),
-    /Incomplete/,
-  );
-  assert.throws(
-    () => redisConfig({ KV_REST_API_URL: "https://kv.example" }),
-    /Incomplete/,
-  );
-  assert.equal(
-    redisConfig({ KV_REST_API_READ_ONLY_TOKEN: "read-only-token" }),
-    null,
-  );
+  const partialExplicit = {
+    ...kv,
+    UPSTASH_REDIS_REST_URL: "https://other.example",
+  };
+  const mixed = {
+    UPSTASH_REDIS_REST_URL: "https://other.example",
+    KV_REST_API_TOKEN: "kv-token",
+  };
+  const partialKV = { KV_REST_API_URL: "https://kv.example" };
+  for (const env of [partialExplicit, mixed, partialKV]) {
+    assert.throws(() => redisConfig(env), /Incomplete/);
+  }
+  const readOnly = { KV_REST_API_READ_ONLY_TOKEN: "read-only-token" };
+  assert.equal(redisConfig(readOnly), null);
 });
