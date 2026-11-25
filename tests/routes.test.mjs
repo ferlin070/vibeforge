@@ -5,7 +5,11 @@ import { POST as repository } from "../app/api/repository/route.js";
 import { POST as ci } from "../app/api/ci/route.js";
 import { starterBlueprint } from "../lib/blueprint.mjs";
 import { sameOrigin, guard } from "../lib/request-guard.mjs";
-import { createMemoryLimiter, rateLimit } from "../lib/rate-limit.mjs";
+import {
+  createMemoryLimiter,
+  rateLimit,
+  redisConfig,
+} from "../lib/rate-limit.mjs";
 const sha = "a".repeat(40),
   key = "test-provider-secret-987654",
   project = { name: "Fixture", idea: "Build a website" },
@@ -25,6 +29,8 @@ process.env.NEXT_PUBLIC_SUPABASE_URL = "https://fixture.supabase.co";
 process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_fixture";
 delete process.env.UPSTASH_REDIS_REST_URL;
 delete process.env.UPSTASH_REDIS_REST_TOKEN;
+delete process.env.KV_REST_API_URL;
+delete process.env.KV_REST_API_TOKEN;
 let count = 0;
 const mock = async (fn, work) => {
   const old = globalThis.fetch;
@@ -287,5 +293,70 @@ test("distributed limiter is mandatory only in Vercel production", async () => {
   assert.equal(
     await rateLimit("rc3-preview", 2, { env: { VERCEL_ENV: "preview" } }),
     true,
+  );
+});
+
+test("Vercel KV REST credentials use the same atomic limiter", async () => {
+  const env = {
+    VERCEL_ENV: "production",
+    KV_REST_API_URL: "https://kv.example",
+    KV_REST_API_TOKEN: "fixture-write-token",
+    KV_REST_API_READ_ONLY_TOKEN: "fixture-read-only-token",
+  };
+  let calls = 0;
+  for (const result of [1, 0]) {
+    assert.equal(
+      await rateLimit("kv-fixture", 1, {
+        env,
+        fetcher: async (url, opts) => {
+          calls++;
+          assert.equal(url, "https://kv.example/");
+          assert.equal(opts.headers.Authorization, "Bearer fixture-write-token");
+          assert.equal(JSON.parse(opts.body)[0], "EVAL");
+          return Response.json({ result });
+        },
+      }),
+      result === 1,
+    );
+  }
+  assert.equal(calls, 2);
+});
+
+test("REST config selects complete pairs and refuses mixed credentials", () => {
+  const kv = {
+    KV_REST_API_URL: "https://kv.example",
+    KV_REST_API_TOKEN: "kv-token",
+  };
+  assert.deepEqual(redisConfig(kv), {
+    url: "https://kv.example",
+    token: "kv-token",
+  });
+  assert.deepEqual(
+    redisConfig({
+      ...kv,
+      UPSTASH_REDIS_REST_URL: "https://explicit.example",
+      UPSTASH_REDIS_REST_TOKEN: "explicit-token",
+    }),
+    { url: "https://explicit.example", token: "explicit-token" },
+  );
+  assert.throws(
+    () => redisConfig({ ...kv, UPSTASH_REDIS_REST_URL: "https://other.example" }),
+    /Incomplete/,
+  );
+  assert.throws(
+    () =>
+      redisConfig({
+        UPSTASH_REDIS_REST_URL: "https://other.example",
+        KV_REST_API_TOKEN: "kv-token",
+      }),
+    /Incomplete/,
+  );
+  assert.throws(
+    () => redisConfig({ KV_REST_API_URL: "https://kv.example" }),
+    /Incomplete/,
+  );
+  assert.equal(
+    redisConfig({ KV_REST_API_READ_ONLY_TOKEN: "read-only-token" }),
+    null,
   );
 });
