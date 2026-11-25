@@ -17,6 +17,7 @@ import Guide from "./guide.jsx";
 import DashboardFocus from "./dashboard.jsx";
 import Portfolio from "./portfolio.jsx";
 import AgentHub from "./agent-hub.jsx";
+import TemplateCatalog from "./templates.jsx";
 import {
   applyProjectPatch,
   impactOf,
@@ -39,6 +40,7 @@ const nav = [
   ["overview", "◈", "Overview"],
   ["projects", "▤", "My projects"],
   ["new", "＋", "Project studio"],
+  ["templates", "▦", "Template library"],
   ["workflow", "↳", "Workflow"],
   ["docs", "▧", "Documentation"],
   ["prompt", "⌘", "Prompt lab"],
@@ -531,10 +533,10 @@ export default function Home() {
       </div>
       <nav aria-label="Workspace navigation">
         {[
-          ["Workspace", nav.slice(0, 3)],
-          ["Build", nav.slice(3, 10)],
-          ["Verify", nav.slice(10, 12)],
-          ["Account", nav.slice(12)],
+          ["Workspace", nav.slice(0, 4)],
+          ["Build", nav.slice(4, 11)],
+          ["Verify", nav.slice(11, 13)],
+          ["Account", nav.slice(13)],
         ].map(([label, items]) => (
           <div className="navgroup" key={label}>
             <div className="side-label">{label}</div>
@@ -787,6 +789,13 @@ export default function Home() {
                 </article>
               </div>
             </>
+          )}
+          {view === "templates" && (
+            <TemplateCatalog
+              onUse={(template) => {
+                if (navigate("new")) setDraft(template);
+              }}
+            />
           )}
           {view === "new" && (
             <>
