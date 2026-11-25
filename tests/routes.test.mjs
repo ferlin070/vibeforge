@@ -311,7 +311,10 @@ test("Vercel KV REST credentials use the same atomic limiter", async () => {
         fetcher: async (url, opts) => {
           calls++;
           assert.equal(url, "https://kv.example/");
-          assert.equal(opts.headers.Authorization, "Bearer fixture-write-token");
+          assert.equal(
+            opts.headers.Authorization,
+            "Bearer fixture-write-token",
+          );
           assert.equal(JSON.parse(opts.body)[0], "EVAL");
           return Response.json({ result });
         },
