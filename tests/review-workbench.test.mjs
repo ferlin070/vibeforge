@@ -30,7 +30,8 @@ test("debug investigation links acceptance criteria and redacts log secrets", ()
 });
 
 test("review signals concern added diff lines and remain unverified", () => {
-  const diff = "--- a/file.js\n+++ b/file.js\n-eval(input)\n+eval(input)\n+password=fixture-secret";
+  const diff =
+    "--- a/file.js\n+++ b/file.js\n-eval(input)\n+eval(input)\n+password=fixture-secret";
   const result = inspectDiff(diff);
   assert.equal(result.addedLines, 2);
   assert.equal(result.signals.length, 2);
