@@ -671,7 +671,8 @@ test("team workspace owner creates a workspace and publishes an independent brie
     const method = req.method();
     const headers = {
       "access-control-allow-origin": origin,
-      "access-control-allow-headers": "apikey, authorization, content-type, prefer",
+      "access-control-allow-headers":
+        "apikey, authorization, content-type, prefer",
       "access-control-allow-methods": "GET, POST, PATCH, DELETE, OPTIONS",
     };
     if (method === "OPTIONS") return route.fulfill({ status: 204, headers });
@@ -710,7 +711,9 @@ test("team workspace owner creates a workspace and publishes an independent brie
       headers,
       json: list.filter((row) =>
         ["id", "team_id", "user_id"].every(
-          (key) => !url.searchParams.has(key) || url.searchParams.get(key) === "eq." + row[key],
+          (key) =>
+            !url.searchParams.has(key) ||
+            url.searchParams.get(key) === "eq." + row[key],
         ),
       ),
     });
@@ -720,8 +723,13 @@ test("team workspace owner creates a workspace and publishes an independent brie
   await page.getByLabel("Email", { exact: true }).fill(token.user.email);
   await page.getByLabel("Password", { exact: true }).fill("fixture-password");
   await page.locator("form").getByRole("button", { name: "Sign in" }).click();
-  await expect(page.getByRole("heading", { name: token.user.email })).toBeVisible();
-  await page.locator(".sidebar").getByRole("button", { name: "Team collaboration" }).click();
+  await expect(
+    page.getByRole("heading", { name: token.user.email }),
+  ).toBeVisible();
+  await page
+    .locator(".sidebar")
+    .getByRole("button", { name: "Team collaboration" })
+    .click();
   const area = page.getByRole("region", { name: "Team workspaces" });
   await area.getByLabel("Workspace name").fill("Test product team");
   accept(page);
@@ -732,8 +740,12 @@ test("team workspace owner creates a workspace and publishes an independent brie
   await area.getByRole("button", { name: "Add member" }).click();
   await expect(area.getByText("Member added.", { exact: true })).toBeVisible();
   accept(page);
-  await area.getByRole("button", { name: "Publish active project brief" }).click();
-  await expect(area.getByText("Brief published.", { exact: true })).toBeVisible();
+  await area
+    .getByRole("button", { name: "Publish active project brief" })
+    .click();
+  await expect(
+    area.getByText("Brief published.", { exact: true }),
+  ).toBeVisible();
   accept(page);
   await area.getByRole("button", { name: "Import team draft" }).click();
   await expect.poll(async () => (await stored(page)).length).toBe(2);
