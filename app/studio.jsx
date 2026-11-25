@@ -560,7 +560,8 @@ export default function Studio({
               aria-label="Specification document"
             />
             <small>
-              Scope edits require impact confirmation before saving and clearing prior work.
+              Scope edits require impact confirmation before saving and clearing
+              prior work.
             </small>
             <br />
             <button

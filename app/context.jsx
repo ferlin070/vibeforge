@@ -205,7 +205,9 @@ export default function ContextManager({
               onClick={() => {
                 if (confirm("Remove this memory entry?"))
                   handle(() => {
-                    if (!update({ memory: memory.filter((x) => x.id !== m.id) }))
+                    if (
+                      !update({ memory: memory.filter((x) => x.id !== m.id) })
+                    )
                       throw Error("Change cancelled. Memory retained.");
                   });
               }}

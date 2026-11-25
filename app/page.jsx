@@ -965,7 +965,9 @@ export default function Home() {
                         Preferred coding agent
                         <select
                           value={p.agent}
-                          onChange={(e) => updateActive({ agent: e.target.value })}
+                          onChange={(e) =>
+                            updateActive({ agent: e.target.value })
+                          }
                         >
                           {agents.map((agent) => (
                             <option key={agent}>{agent}</option>
@@ -973,7 +975,8 @@ export default function Home() {
                         </select>
                       </label>
                       <small>
-                        Changes future prompts only; existing assignments and reviews stay intact.
+                        Changes future prompts only; existing assignments and
+                        reviews stay intact.
                       </small>
                       <small>
                         Template-based output. Review and approve the task
