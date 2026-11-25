@@ -5,21 +5,32 @@ export default function DashboardFocus({ project, navigate }) {
   const d = dashboardSummary(project);
   const gateCount = d.gates.filter((gate) => gate.ok).length;
   return (
-    <section className="dashboard-focus" aria-label="Active project command center">
+    <section
+      className="dashboard-focus"
+      aria-label="Active project command center"
+    >
       <div className="focus-card">
         <div className="eyebrow">ACTIVE PROJECT · COMMAND CENTER</div>
         <h2>{project?.name || "Your next build"}</h2>
         <p>{project?.type || "Start with a structured project brief."}</p>
         <div className="focus-status">
-          {project?.blueprintApproved ? "Blueprint approved" : "Blueprint not approved"}
+          {project?.blueprintApproved
+            ? "Blueprint approved"
+            : "Blueprint not approved"}
           {" · "}
           {project?.agent || "Universal"}
         </div>
         <div className="focus-progress">
           <span>Manually reviewed tasks</span>
-          <strong>{d.reviewed}/{d.total}</strong>
+          <strong>
+            {d.reviewed}/{d.total}
+          </strong>
         </div>
-        <progress aria-label="Task review progress" max={d.total || 1} value={d.reviewed} />
+        <progress
+          aria-label="Task review progress"
+          max={d.total || 1}
+          value={d.reviewed}
+        />
         <div className="focus-stats">
           {[
             ["Available / dispatched", d.ready],
@@ -36,7 +47,9 @@ export default function DashboardFocus({ project, navigate }) {
       </div>
       <div className="focus-card">
         <div className="eyebrow">RELEASE EVIDENCE</div>
-        <h2>{gateCount}/{d.gates.length} readiness gates</h2>
+        <h2>
+          {gateCount}/{d.gates.length} readiness gates
+        </h2>
         <p>Advisory checks, not independent release certification.</p>
         <ul className="focus-gates">
           {d.gates.map((gate) => (
@@ -48,7 +61,10 @@ export default function DashboardFocus({ project, navigate }) {
             </li>
           ))}
         </ul>
-        <button className="ghost" onClick={() => navigate(project ? "quality" : "new")}>
+        <button
+          className="ghost"
+          onClick={() => navigate(project ? "quality" : "new")}
+        >
           {project ? "Open Quality Studio →" : "Create project →"}
         </button>
       </div>

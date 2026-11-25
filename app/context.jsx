@@ -48,7 +48,9 @@ export default function ContextManager({
     v = versions.find((x) => x.id === version),
     diff = v ? compareContext(p, v) : null;
   const prompt = agentPrompt(p, agent, mode, task);
-  const buildAllowed = mode === "Build" && r.ready.some((item) => item.id === task && item.status === "Ready");
+  const buildAllowed =
+    mode === "Build" &&
+    r.ready.some((item) => item.id === task && item.status === "Ready");
   const handle = (fn) => {
     try {
       fn();
@@ -342,9 +344,21 @@ export default function ContextManager({
           </select>
         </label>
         <div className="summary">
-          <h3>{mode === "Build" && buildAllowed ? "Approved task handoff" : "Read-only handoff"}</h3>
-          <p>{buildAllowed ? "Only the selected ready task is authorized." : "No implementation authorization. Review scope and dependencies first."}</p>
-          <small>Exports include a task manifest and blank implementation report template. Reports are not test evidence until independently reviewed.</small>
+          <h3>
+            {mode === "Build" && buildAllowed
+              ? "Approved task handoff"
+              : "Read-only handoff"}
+          </h3>
+          <p>
+            {buildAllowed
+              ? "Only the selected ready task is authorized."
+              : "No implementation authorization. Review scope and dependencies first."}
+          </p>
+          <small>
+            Exports include a task manifest and blank implementation report
+            template. Reports are not test evidence until independently
+            reviewed.
+          </small>
         </div>
         <textarea
           readOnly
@@ -354,7 +368,14 @@ export default function ContextManager({
           aria-label="Agent handoff prompt"
         />
         <button onClick={copy}>Copy handoff</button>
-        <button className="ghost" onClick={() => dl(reportTemplate(), "agent-report-template.md", "text/markdown")}>Export report template</button>
+        <button
+          className="ghost"
+          onClick={() =>
+            dl(reportTemplate(), "agent-report-template.md", "text/markdown")
+          }
+        >
+          Export report template
+        </button>
         <button
           className="ghost"
           onClick={() => dl(prompt, "agent-handoff.md", "text/markdown")}

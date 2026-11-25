@@ -6,7 +6,10 @@ import { dashboardSummary } from "../lib/dashboard.mjs";
 const p = {
   name: "Fixture",
   idea: "Build a booking site",
-  blueprint: starterBlueprint({ name: "Fixture", idea: "Build a booking site" }),
+  blueprint: starterBlueprint({
+    name: "Fixture",
+    idea: "Build a booking site",
+  }),
   blueprintApproved: true,
   evidence: {},
 };

@@ -91,7 +91,11 @@ test("portable agent context contains instructions and documents but excludes ar
 test("agent handoff identifies target commit and includes blank evidence template", () => {
   const project = {
     ...p,
-    repository: { repo: "owner/repo", branch: "feature/test", sha: "a".repeat(40) },
+    repository: {
+      repo: "owner/repo",
+      branch: "feature/test",
+      sha: "a".repeat(40),
+    },
   };
   const prompt = agentPrompt(project, "Codex", "Build", "TASK-001");
   assert.match(prompt, /feature\/test/);
@@ -104,6 +108,8 @@ test("agent handoff identifies target commit and includes blank evidence templat
   assert.equal(manifest.tasks[1].status, "Blocked");
   assert.match(files["REPORT_TEMPLATE.md"], /Not verified/);
   assert.equal(files["REPORT_TEMPLATE.md"], reportTemplate());
-  const draft = JSON.parse(agentFiles({ ...project, blueprintApproved: false })["TASK_MANIFEST.json"]);
+  const draft = JSON.parse(
+    agentFiles({ ...project, blueprintApproved: false })["TASK_MANIFEST.json"],
+  );
   assert.ok(draft.tasks.every((task) => task.status === "Awaiting approval"));
 });
