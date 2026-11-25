@@ -25,12 +25,6 @@ jobs:
       - run: npm run lint
       - run: npm audit --omit=dev --audit-level=high
       - run: npm run format:check
-        id: format
-      - name: Show team formatting diff on failure
-        if: failure() && steps.format.outcome == 'failure'
-        run: |
-          npx --no-install prettier --write app/team.jsx app/team-space.jsx lib/team-space.mjs tests/team-space.test.mjs e2e/integrations.spec.mjs docs/BETA-HARDENING.md
-          git --no-pager diff -- app/team.jsx app/team-space.jsx lib/team-space.mjs tests/team-space.test.mjs e2e/integrations.spec.mjs docs/BETA-HARDENING.md
       - run: npx --no-install playwright install --with-deps chromium
       - run: npm run test:e2e
         env:
