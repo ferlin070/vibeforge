@@ -1,11 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { agents } from "../lib/context.mjs";
-import {
-  agentGuides,
-  guideFor,
-  modelColumns,
-} from "../lib/agent-guides.mjs";
+import { agentGuides, guideFor, modelColumns } from "../lib/agent-guides.mjs";
 
 test("setup guides match supported agent labels and use HTTPS", () => {
   assert.equal(agentGuides.length, 5);
@@ -28,5 +24,8 @@ test("setup guides match supported agent labels and use HTTPS", () => {
 
 test("unverified local Harness support is not presented as documented", () => {
   const guide = guideFor("DeepSeek Harness");
-  assert.equal(guide.models[modelColumns.indexOf("Local Ollama")], "Not verified");
+  assert.equal(
+    guide.models[modelColumns.indexOf("Local Ollama")],
+    "Not verified",
+  );
 });
