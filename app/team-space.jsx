@@ -157,7 +157,9 @@ export default function TeamSpaces({ project, session, onImport }) {
             </>
           )}
           <h3>Members</h3>
-          <small>Showing up to 100 members. Account IDs are private contact data.</small>
+          <small>
+            Showing up to 100 members. Account IDs are private contact data.
+          </small>
           {roles.length > 0 && (
             <div className="twocol">
               <label>
@@ -186,9 +188,26 @@ export default function TeamSpaces({ project, session, onImport }) {
                 disabled={busy || !account.trim()}
                 onClick={() =>
                   run(async () => {
-                    const desired = roles.includes(newRole) ? newRole : roles[0];
-                    if (!confirm("Grant " + desired + " access to account " + account + "? They can read published briefs.")) return;
-                    await addMember(teamId, account, desired, session, cloudRequest);
+                    const desired = roles.includes(newRole)
+                      ? newRole
+                      : roles[0];
+                    if (
+                      !confirm(
+                        "Grant " +
+                          desired +
+                          " access to account " +
+                          account +
+                          "? They can read published briefs.",
+                      )
+                    )
+                      return;
+                    await addMember(
+                      teamId,
+                      account,
+                      desired,
+                      session,
+                      cloudRequest,
+                    );
                     setAccount("");
                     await refresh(teamId);
                     setMessage("Member added.");
@@ -205,45 +224,57 @@ export default function TeamSpaces({ project, session, onImport }) {
                 <small>{member.user_id}</small>
                 <p>{member.role}</p>
               </div>
-              {canManageMember(role, member.role) && member.user_id !== session.id && (
-                <>
-                  <label>
-                    Change member role
-                    <select
-                      aria-label={"Role for " + member.user_id}
-                      value={member.role}
+              {canManageMember(role, member.role) &&
+                member.user_id !== session.id && (
+                  <>
+                    <label>
+                      Change member role
+                      <select
+                        aria-label={"Role for " + member.user_id}
+                        value={member.role}
+                        disabled={busy}
+                        onChange={(event) => {
+                          const next = event.target.value;
+                          run(async () => {
+                            if (!confirm("Change this member to " + next + "?"))
+                              return;
+                            await changeMember(
+                              member,
+                              next,
+                              session,
+                              cloudRequest,
+                            );
+                            await refresh(teamId);
+                            setMessage("Member role updated.");
+                          });
+                        }}
+                      >
+                        {roles.map((item) => (
+                          <option key={item}>{item}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <button
+                      className="ghost"
                       disabled={busy}
-                      onChange={(event) => {
-                        const next = event.target.value;
+                      onClick={() =>
                         run(async () => {
-                          if (!confirm("Change this member to " + next + "?")) return;
-                          await changeMember(member, next, session, cloudRequest);
+                          if (
+                            !confirm(
+                              "Remove this member's access to the workspace?",
+                            )
+                          )
+                            return;
+                          await removeMember(member, session, cloudRequest);
                           await refresh(teamId);
-                          setMessage("Member role updated.");
-                        });
-                      }}
+                          setMessage("Member access removed.");
+                        })
+                      }
                     >
-                      {roles.map((item) => (
-                        <option key={item}>{item}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <button
-                    className="ghost"
-                    disabled={busy}
-                    onClick={() =>
-                      run(async () => {
-                        if (!confirm("Remove this member's access to the workspace?")) return;
-                        await removeMember(member, session, cloudRequest);
-                        await refresh(teamId);
-                        setMessage("Member access removed.");
-                      })
-                    }
-                  >
-                    Remove member
-                  </button>
-                </>
-              )}
+                      Remove member
+                    </button>
+                  </>
+                )}
             </article>
           ))}
           {role !== "owner" && (
@@ -253,8 +284,14 @@ export default function TeamSpaces({ project, session, onImport }) {
               onClick={() =>
                 run(async () => {
                   const own = workspace.ownMembership;
-                  if (!own) throw Error("Refresh the member list before leaving.");
-                  if (!confirm("Leave this workspace? Local imported copies remain.")) return;
+                  if (!own)
+                    throw Error("Refresh the member list before leaving.");
+                  if (
+                    !confirm(
+                      "Leave this workspace? Local imported copies remain.",
+                    )
+                  )
+                    return;
                   await removeMember(own, session, cloudRequest);
                   setWorkspace(null);
                   await refresh();
@@ -281,7 +318,12 @@ export default function TeamSpaces({ project, session, onImport }) {
                 disabled={busy}
                 onClick={() =>
                   run(async () => {
-                    if (!confirm("Publish the previewed brief to all current and future workspace members?")) return;
+                    if (
+                      !confirm(
+                        "Publish the previewed brief to all current and future workspace members?",
+                      )
+                    )
+                      return;
                     await publishBrief(teamId, project, session, cloudRequest);
                     await refresh(teamId);
                     setMessage("Brief published.");
@@ -308,10 +350,23 @@ export default function TeamSpaces({ project, session, onImport }) {
                 disabled={busy}
                 onClick={() =>
                   run(async () => {
-                    if (!confirm("Import as a new unapproved local draft?")) return;
-                    const current = await readTeamBrief(teamId, brief.id, session, cloudRequest);
+                    if (!confirm("Import as a new unapproved local draft?"))
+                      return;
+                    const current = await readTeamBrief(
+                      teamId,
+                      brief.id,
+                      session,
+                      cloudRequest,
+                    );
                     if (!active.current) return;
-                    onImport(importTeamBrief(current, session, crypto.randomUUID(), new Date().toISOString()));
+                    onImport(
+                      importTeamBrief(
+                        current,
+                        session,
+                        crypto.randomUUID(),
+                        new Date().toISOString(),
+                      ),
+                    );
                   })
                 }
               >
@@ -323,8 +378,18 @@ export default function TeamSpaces({ project, session, onImport }) {
                   disabled={busy}
                   onClick={() =>
                     run(async () => {
-                      if (!confirm("Revoke this publication for all members? Imported copies remain.")) return;
-                      await revokeBrief(teamId, brief.id, session, cloudRequest);
+                      if (
+                        !confirm(
+                          "Revoke this publication for all members? Imported copies remain.",
+                        )
+                      )
+                        return;
+                      await revokeBrief(
+                        teamId,
+                        brief.id,
+                        session,
+                        cloudRequest,
+                      );
                       await refresh(teamId);
                       setMessage("Publication revoked.");
                     })
@@ -335,7 +400,10 @@ export default function TeamSpaces({ project, session, onImport }) {
               )}
             </article>
           ))}
-          <small>Showing up to 50 recent publications. Refresh before relying on access state.</small>
+          <small>
+            Showing up to 50 recent publications. Refresh before relying on
+            access state.
+          </small>
         </>
       )}
       {message && <p role="status">{message}</p>}
