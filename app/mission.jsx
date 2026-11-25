@@ -352,11 +352,16 @@ export default function Mission({
                 onClick={() => {
                   try {
                     const summary = reviewLocalReceipt(p, t.id, receipt);
-                    const next = [report.trim(), summary].filter(Boolean).join("\n\n");
-                    if (next.length > 5000) throw Error("Report limit exceeded.");
+                    const next = [report.trim(), summary]
+                      .filter(Boolean)
+                      .join("\n\n");
+                    if (next.length > 5000)
+                      throw Error("Report limit exceeded.");
                     setReport(next);
                     setReceipt("");
-                    setMsg("Receipt added to draft only. Verify actual evidence.");
+                    setMsg(
+                      "Receipt added to draft only. Verify actual evidence.",
+                    );
                   } catch (error) {
                     setMsg(error.message);
                   }
