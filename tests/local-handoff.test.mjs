@@ -121,13 +121,28 @@ test("receipt remains unverified and is bound to current task and repository", (
   assert.match(summary, /unverified/);
   assert.match(summary, /No implementation or test outcome/);
   assert.throws(() =>
-    reviewLocalReceipt(p, "TASK-001", JSON.stringify({ ...receipt, taskId: "TASK-002" })),
+    reviewLocalReceipt(
+      p,
+      "TASK-001",
+      JSON.stringify({ ...receipt, taskId: "TASK-002" }),
+    ),
   );
   assert.throws(() =>
-    reviewLocalReceipt({ ...p, blueprintApproved: false }, "TASK-001", JSON.stringify(receipt)),
+    reviewLocalReceipt(
+      { ...p, blueprintApproved: false },
+      "TASK-001",
+      JSON.stringify(receipt),
+    ),
   );
   assert.throws(() =>
-    reviewLocalReceipt(p, "TASK-001", JSON.stringify({ ...receipt, target: { ...receipt.target, commit: "b".repeat(40) } })),
+    reviewLocalReceipt(
+      p,
+      "TASK-001",
+      JSON.stringify({
+        ...receipt,
+        target: { ...receipt.target, commit: "b".repeat(40) },
+      }),
+    ),
   );
   assert.equal(JSON.stringify(p), before);
 });
