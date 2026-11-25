@@ -7,7 +7,7 @@ permissions:
   contents: read
 jobs:
   test-build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -16,38 +16,12 @@ jobs:
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
         with:
           node-version: "22"
-      - name: Bootstrap pinned Playwright lockfile (temporary)
-        run: |
-          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-          node --input-type=module <<'NODE'
-          import fs from 'node:fs';
-          import crypto from 'node:crypto';
-          const content=fs.readFileSync('package-lock.json','utf8');
-          const parts=content.match(/[\s\S]{1,2000}/g);
-          console.log('VF_LOCK_META '+JSON.stringify({parts:parts.length,sha256:crypto.createHash('sha256').update(content).digest('hex')}));
-          for(let i=0;i<parts.length;i++)console.log('VF_LOCK_PART '+JSON.stringify({i,content:parts[i]}));
-          NODE
+      - run: echo 'c9f471b4f0dd58ceae156cae3ec330b54615c9f902ef77a9261248c5b3847037  package-lock.json' | sha256sum -c -
       - run: npm ci --no-audit --no-fund
       - run: npm test
       - run: npm run build
       - run: npm run lint
       - run: npm audit --omit=dev --audit-level=high
-      - name: Format Phase 10 source (temporary)
-        run: |
-          npx --no-install prettier --write package.json playwright.config.mjs e2e/workspace.spec.mjs docs/PHASE-10.md eslint.config.mjs
-          node --input-type=module <<'NODE'
-          import fs from 'node:fs';
-          import {execFileSync} from 'node:child_process';
-          const paths=execFileSync('git',['diff','--name-only','-z'],{encoding:'utf8'}).split('\0').filter(x=>x&&x!=='package-lock.json');
-          console.log('VF_FORMAT_COUNT '+paths.length);
-          for(const path of paths){
-            const content=fs.readFileSync(path,'utf8');
-            const chunks=Buffer.from(content,'utf8').toString('base64').match(/.{1,2000}/g)||[''];
-            const sha=execFileSync('git',['hash-object',path],{encoding:'utf8'}).trim();
-            console.log('VF_FORMAT_META '+JSON.stringify({path,parts:chunks.length,sha}));
-            for(let i=0;i<chunks.length;i++)console.log('VF_FORMAT_B64 '+JSON.stringify({path,i,content:chunks[i]}));
-          }
-          NODE
       - run: npm run format:check
       - run: npx --no-install playwright install --with-deps chromium
       - run: npm run test:e2e
