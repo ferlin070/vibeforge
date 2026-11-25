@@ -90,7 +90,7 @@ export default function Architect({ project }) {
         for full blueprint generation with your selected provider.
       </p>
       {message && <p role="status">{message}</p>}
-      <ArchitectureModel />
+      <ArchitectureModel key={project.id} projectId={project.id} />
     </section>
   );
 }
