@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { agents } from "../lib/context.mjs";
 import { localHandoffFiles } from "../lib/local-handoff.mjs";
+import { reviewLocalReceipt } from "../lib/local-runner.mjs";
 import { makeZip } from "../lib/zip.mjs";
 import {
   roles,
@@ -25,6 +26,7 @@ export default function Mission({
     [taskId, setTaskId] = useState(""),
     [choice, setChoice] = useState({}),
     [report, setReport] = useState(""),
+    [receipt, setReceipt] = useState(""),
     [msg, setMsg] = useState("");
   if (!p)
     return (
@@ -212,6 +214,7 @@ export default function Mission({
                 className={t?.id === x.id ? "" : "ghost"}
                 onClick={() => {
                   setTaskId(x.id);
+                  setReceipt("");
                   setReport(p.evidence?.[x.id]?.report || "");
                 }}
               >
@@ -324,6 +327,49 @@ export default function Mission({
           >
             Record sent handoff
           </button>
+          {t.assignment?.agent === "OpenCode" && (
+            <div className="summary">
+              <h3>OpenCode local runner pilot</h3>
+              <p>
+                The package can start an interactive local CLI after Git
+                preflight and explicit terminal confirmation. No remote shell,
+                sandbox or automatic prompt submission is provided.
+              </p>
+              <label>
+                Local session receipt JSON
+                <textarea
+                  aria-label="Local session receipt JSON"
+                  rows={4}
+                  maxLength={8192}
+                  value={receipt}
+                  onChange={(event) => setReceipt(event.target.value)}
+                  placeholder="Paste RECEIPT.json after reviewing its contents"
+                />
+              </label>
+              <button
+                className="ghost"
+                disabled={!receipt.trim() || t.status !== "Handed off"}
+                onClick={() => {
+                  try {
+                    const summary = reviewLocalReceipt(p, t.id, receipt);
+                    const next = [report.trim(), summary].filter(Boolean).join("\n\n");
+                    if (next.length > 5000) throw Error("Report limit exceeded.");
+                    setReport(next);
+                    setReceipt("");
+                    setMsg("Receipt added to draft only. Verify actual evidence.");
+                  } catch (error) {
+                    setMsg(error.message);
+                  }
+                }}
+              >
+                Add receipt to report draft
+              </button>
+              <small>
+                Record the manual handoff first. A receipt is unsigned and
+                cannot prove implementation success or approve a task.
+              </small>
+            </div>
+          )}
           <label>
             Implementation report / test evidence
             <textarea
