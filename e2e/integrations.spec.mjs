@@ -210,6 +210,13 @@ test("mocked AI failure and candidate review preserve existing work until apply"
   await page.getByLabel("Input price (USD per million tokens)").fill("1");
   await page.getByLabel("Output price (USD per million tokens)").fill("2");
   await expect(page.getByText("Estimated cost: USD 0.00250000")).toBeVisible();
+  const history = page.getByLabel("AI execution history");
+  await expect(
+    history.getByText("Candidate ready", { exact: true }),
+  ).toBeVisible();
+  await expect(history.getByText("Failed", { exact: true })).toBeVisible();
+  await expect(history).toContainText("Total tokens: 1500");
+  await expect(history).not.toContainText("fixture-key-1234");
   expect((await stored(page))[0].blueprint).toEqual(approved.blueprint);
   expect((await stored(page))[0].blueprintApproved).toBe(true);
   accept(page);
