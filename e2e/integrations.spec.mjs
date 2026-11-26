@@ -799,17 +799,23 @@ test("local backup import validates and restores independent drafts", async ({
     mimeType: "application/json",
     buffer: Buffer.from(JSON.stringify([approved, approved])),
   });
-  await expect(page.getByText(/1–200 valid, uniquely identified/)).toBeVisible();
+  await expect(
+    page.getByText(/1–200 valid, uniquely identified/),
+  ).toBeVisible();
   expect(await stored(page)).toEqual(before);
   await input.setInputFiles({
     name: "backup.json",
     mimeType: "application/json",
     buffer: Buffer.from(JSON.stringify([approved])),
   });
-  await expect(page.getByRole("heading", { name: "1 valid project(s)" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "1 valid project(s)" }),
+  ).toBeVisible();
   accept(page);
   await page.getByRole("button", { name: "Import as new drafts" }).click();
-  await expect(page.getByText("1 recovered draft(s) saved locally.")).toBeVisible();
+  await expect(
+    page.getByText("1 recovered draft(s) saved locally."),
+  ).toBeVisible();
   const after = await stored(page);
   expect(after).toHaveLength(2);
   expect(after[0].id).not.toBe(approved.id);
