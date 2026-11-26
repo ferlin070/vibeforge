@@ -67,9 +67,15 @@ test("invalid backups, duplicate identities and failed storage do not overwrite 
   const existing = [source];
   assert.throws(
     () =>
-      restoreBackupAsDrafts(raw, existing, () => "recovered", now, () => {
-        throw Error("Quota");
-      }),
+      restoreBackupAsDrafts(
+        raw,
+        existing,
+        () => "recovered",
+        now,
+        () => {
+          throw Error("Quota");
+        },
+      ),
     /Quota/,
   );
   assert.deepEqual(existing, [source]);
