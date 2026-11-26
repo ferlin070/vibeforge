@@ -75,6 +75,7 @@ export default function Studio({
       </section>
     );
   const currentProvider = providerById(provider);
+  const managed = currentProvider.managed === true;
   const usage = candidate?.usage;
   const modelSummary = generationSummary(provider, model, p, includeRepo);
   const b = p.blueprint,
@@ -88,13 +89,13 @@ export default function Studio({
   };
   const generate = async () => {
     if (busy) return;
-    if (!key.trim()) {
+    if (!managed && !key.trim()) {
       setMsg("Enter your selected provider API key.");
       return;
     }
     if (
       !session &&
-      (currentProvider.custom || process.env.NODE_ENV !== "development")
+      (managed || currentProvider.custom || process.env.NODE_ENV !== "development")
     ) {
       setMsg(
         "Sign in via Cloud account to generate with AI on hosted deployments. Manual blueprint mode remains available.",
@@ -146,7 +147,7 @@ export default function Studio({
         headers: {
           "Content-Type": "application/json",
           ...(session?.token ? { "x-vibeforge-session": session.token } : {}),
-          "x-provider-key": key.trim(),
+          ...(!managed ? { "x-provider-key": key.trim() } : {}),
         },
         signal: AbortSignal.timeout(65000),
         body: JSON.stringify({
@@ -328,7 +329,7 @@ export default function Studio({
               }
               onClick={() => {
                 setProvider(x.id);
-                setModel(["openai", "gemini"].includes(x.id) ? x.example : "");
+                setModel(["openai", "gemini", "rootsys"].includes(x.id) ? x.example : "");
                 setKey("");
                 setBaseURL("");
                 setMsg("");
@@ -410,6 +411,9 @@ export default function Studio({
           </label>
         )}
         <div className="twocol">
+          {managed ? (
+            <p>Private pilot. Server key only; owner approval and login required.</p>
+          ) : (
           <label>
             {currentProvider.label} API key
             <input
@@ -421,13 +425,14 @@ export default function Studio({
               disabled={busy}
             />
           </label>
+          )}
           <label>
             Model ID
             <input
               placeholder={currentProvider.example}
               value={model}
               onChange={(e) => setModel(e.target.value)}
-              disabled={busy}
+              disabled={busy || managed}
             />
           </label>
         </div>
@@ -442,7 +447,7 @@ export default function Studio({
               ? "Model ID format accepted"
               : "Model ID required"}
             {" · "}
-            {key.trim() ? "Key entered (memory only)" : "Key not entered"}
+            {managed ? "Server-managed pilot" : key.trim() ? "Key entered (memory only)" : "Key not entered"}
           </p>
           <details>
             <summary>Preview exact project context sent to provider</summary>
@@ -453,7 +458,7 @@ export default function Studio({
         <button
           disabled={
             busy ||
-            !key.trim() ||
+            (!managed && !key.trim()) ||
             !validModel(provider, model) ||
             (currentProvider.custom && !baseURL.trim())
           }
@@ -494,7 +499,9 @@ export default function Studio({
             <p>Total tokens: {entry.usage?.totalTokenCount ?? "Unknown"}</p>
           </div>
         ))}
-        <small>Failed attempts may still incur charges. No billing record.</small>
+        <small>
+          Failed attempts may still incur charges. No billing record.
+        </small>
       </section>
       <Architect key={p.id} project={p} />
       {candidate && (
@@ -946,8 +953,8 @@ function GeminiCost({ usage }) {
       </div>
       <p aria-live="polite">Estimated cost: {costText}</p>
       <small>
-        Flat-rate scenario only. Thinking tokens use the output rate. Missing
-        or inconsistent counts prevent an estimate. Excludes caching discounts,
+        Flat-rate scenario only. Thinking tokens use the output rate. Missing or
+        inconsistent counts prevent an estimate. Excludes caching discounts,
         tiers, taxes and other fees. Not a bill or spending limit. Rates and
         estimates are not saved.
       </small>
