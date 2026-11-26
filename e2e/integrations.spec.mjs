@@ -766,18 +766,14 @@ test("operations and Malay navigation persist without changing project data", as
   await expect(
     page.getByRole("heading", { name: "Workspace operations" }),
   ).toBeVisible();
-  await expect(
-    page.getByRole("heading", { name: fixture.name }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: fixture.name })).toBeVisible();
   const before = await stored(page);
   await sidebar.getByLabel("Interface language").selectOption("ms");
   await expect(
     page.getByRole("heading", { name: "Operasi ruang kerja" }),
   ).toBeVisible();
   await page.reload();
-  await expect(
-    sidebar.getByLabel("Bahasa antara muka"),
-  ).toHaveValue("ms");
+  await expect(sidebar.getByLabel("Bahasa antara muka")).toHaveValue("ms");
   await expect(
     page.getByRole("heading", { name: "Operasi ruang kerja" }),
   ).toBeVisible();
