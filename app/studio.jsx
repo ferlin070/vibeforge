@@ -13,6 +13,7 @@ import {
   generationSummary,
   geminiUsage,
   estimateGeminiCost,
+  generationRecord,
 } from "../lib/model-control.mjs";
 import { scoreBlueprint } from "../lib/blueprint-quality.mjs";
 import {
@@ -50,7 +51,10 @@ export default function Studio({
     [reading, setReading] = useState(false),
     [taskId, setTaskId] = useState(""),
     [report, setReport] = useState(""),
-    [candidate, setCandidate] = useState(null);
+    [candidate, setCandidate] = useState(null),
+    [history, setHistory] = useState(null);
+  const historyOwner = session?.id || null;
+  const records = history?.owner === historyOwner ? history.records : [];
   const dirty =
     !!candidate ||
     (!!report.trim() &&
@@ -118,6 +122,24 @@ export default function Studio({
     setBusy(true);
     setCandidate(null);
     setMsg("Generating validated documents and tasks...");
+    const started = Date.now();
+    const record = (status, usage) => {
+      const entry = generationRecord(
+        provider,
+        model,
+        status,
+        started,
+        Date.now(),
+        usage,
+      );
+      setHistory((previous) => ({
+        owner: historyOwner,
+        records: [
+          entry,
+          ...(previous?.owner === historyOwner ? previous.records : []),
+        ].slice(0, 20),
+      }));
+    };
     try {
       const res = await fetch("/api/blueprint", {
         method: "POST",
@@ -143,10 +165,12 @@ export default function Studio({
         base: p,
         usage: provider === "gemini" ? geminiUsage(data.usage) : null,
       });
+      record("success", data.usage);
       setMsg(
         "Candidate generated. Review its quality and apply explicitly. Existing work is unchanged.",
       );
     } catch (e) {
+      record("failure", null);
       setMsg(
         (e.name === "TimeoutError" || e.name === "AbortError"
           ? "Request timed out."
@@ -455,6 +479,22 @@ export default function Studio({
         <p role="status" aria-live="polite">
           {msg}
         </p>
+      </section>
+      <section className="panel" aria-label="AI execution history">
+        <h2>AI Execution History</h2>
+        <p>Last 20 attempts in this Studio view. Not saved or synced.</p>
+        {records.length === 0 && <p>No generation attempts yet.</p>}
+        {records.map((entry, index) => (
+          <div className="summary" key={index}>
+            <strong>{entry.status}</strong>
+            <p>
+              {entry.provider} · {entry.model} · {entry.elapsedMs} ms
+            </p>
+            <small>{entry.at}</small>
+            <p>Total tokens: {entry.usage?.totalTokenCount ?? "Unknown"}</p>
+          </div>
+        ))}
+        <small>Failed attempts may still incur charges. No billing record.</small>
       </section>
       <Architect key={p.id} project={p} />
       {candidate && (
