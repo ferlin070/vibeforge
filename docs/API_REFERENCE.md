@@ -57,3 +57,7 @@ Rootsys uses the fixed `https://rootsys.cloud/v1/chat/completions` endpoint and 
 ### Rootsys owner inspection
 
 `POST /api/rootsys/status` checks the same verified owner, Preview-only activation and distributed Redis as generation, but uses a separate six-per-minute request bucket. It sends no project data and calls only the fixed GET `/v1/models` and `/v1/quota` endpoints. No inference is requested. The response contains sanitized model IDs, pilot model availability and recognized token/expiry fields only. Unknown quota fields stay null; actual field names and compatibility need live verification. Inspection never enables a model for generation. Mod models are not eligible. No automatic polling, retry or storage.
+
+### Rootsys admin readiness
+
+`POST /api/rootsys/admin` is an owner-only, Preview-only configuration check that remains available when inference is disabled. It requires the verified Supabase owner and functioning distributed Redis (six checks per minute in a separate bucket). It returns only activation and key-format booleans, fixed pilot model and request limits. A valid key format is not proof of provider authentication. This route makes no Rootsys requests, returns no credentials and cannot change settings. Missing Redis or owner configuration prevents access; configure those in Vercel first. Generation and quota inspection remain disabled unless separately enabled by the server environment.
