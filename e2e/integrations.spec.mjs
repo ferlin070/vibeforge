@@ -150,7 +150,18 @@ test("mocked AI failure and candidate review preserve existing work until apply"
     await route.fulfill(
       calls === 1
         ? { status: 422, json: { error: "AI returned malformed JSON." } }
-        : { status: 200, json: { blueprint: candidate } },
+        : {
+            status: 200,
+            json: {
+              blueprint: candidate,
+              usage: {
+                promptTokenCount: 500,
+                candidatesTokenCount: 900,
+                thoughtsTokenCount: 100,
+                totalTokenCount: 1500,
+              },
+            },
+          },
     );
   });
   await page.route(cloud + "/**", async (route) => {
@@ -192,6 +203,9 @@ test("mocked AI failure and candidate review preserve existing work until apply"
   await expect(
     page.getByRole("heading", { name: "Generated candidate — not applied" }),
   ).toBeVisible();
+  await expect(page.getByLabel("Gemini token usage")).toContainText(
+    "Total tokens: 1500",
+  );
   expect((await stored(page))[0].blueprint).toEqual(approved.blueprint);
   expect((await stored(page))[0].blueprintApproved).toBe(true);
   accept(page);
