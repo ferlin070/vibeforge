@@ -70,6 +70,7 @@ export default function Studio({
       </section>
     );
   const currentProvider = providerById(provider);
+  const usage = candidate?.usage;
   const modelSummary = generationSummary(provider, model, p, includeRepo);
   const b = p.blueprint,
     evidence = p.evidence || {},
@@ -459,17 +460,13 @@ export default function Studio({
         <section className="panel studioPanel">
           <h2>Generated candidate — not applied</h2>
           <BlueprintScore blueprint={candidate.blueprint} />
-          {candidate.usage && (
+          {usage && (
             <section className="summary" aria-label="Gemini token usage">
               <h3>Gemini token usage</h3>
-              <p>Input tokens: {candidate.usage.promptTokenCount ?? "Unknown"}</p>
-              <p>
-                Output tokens: {candidate.usage.candidatesTokenCount ?? "Unknown"}
-              </p>
-              <p>
-                Thinking tokens: {candidate.usage.thoughtsTokenCount ?? "Unknown"}
-              </p>
-              <p>Total tokens: {candidate.usage.totalTokenCount ?? "Unknown"}</p>
+              <p>Input tokens: {usage.promptTokenCount ?? "Unknown"}</p>
+              <p>Output tokens: {usage.candidatesTokenCount ?? "Unknown"}</p>
+              <p>Thinking tokens: {usage.thoughtsTokenCount ?? "Unknown"}</p>
+              <p>Total tokens: {usage.totalTokenCount ?? "Unknown"}</p>
               <small>Provider-reported usage, not a billing estimate.</small>
             </section>
           )}
