@@ -787,3 +787,34 @@ test("operations and Malay navigation persist without changing project data", as
   await page.getByRole("button", { name: "Inspect quality" }).click();
   await expect(page).toHaveURL(/view=quality.*project=integration-fixture/);
 });
+
+test("local backup import validates and restores independent drafts", async ({
+  page,
+}) => {
+  await page.goto("/?view=guide");
+  const input = page.getByLabel("Backup JSON file");
+  const before = await stored(page);
+  await input.setInputFiles({
+    name: "invalid.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(JSON.stringify([approved, approved])),
+  });
+  await expect(page.getByText(/1–200 valid, uniquely identified/)).toBeVisible();
+  expect(await stored(page)).toEqual(before);
+  await input.setInputFiles({
+    name: "backup.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(JSON.stringify([approved])),
+  });
+  await expect(page.getByRole("heading", { name: "1 valid project(s)" })).toBeVisible();
+  accept(page);
+  await page.getByRole("button", { name: "Import as new drafts" }).click();
+  await expect(page.getByText("1 recovered draft(s) saved locally.")).toBeVisible();
+  const after = await stored(page);
+  expect(after).toHaveLength(2);
+  expect(after[0].id).not.toBe(approved.id);
+  expect(after[0].blueprintApproved).toBe(false);
+  expect(after[1]).toEqual(before[0]);
+  await page.reload();
+  expect(await stored(page)).toEqual(after);
+});
