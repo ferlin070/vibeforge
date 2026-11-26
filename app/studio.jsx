@@ -12,6 +12,7 @@ import {
   generationContext,
   generationSummary,
   geminiUsage,
+  estimateGeminiCost,
 } from "../lib/model-control.mjs";
 import { scoreBlueprint } from "../lib/blueprint-quality.mjs";
 import {
@@ -468,6 +469,7 @@ export default function Studio({
               <p>Thinking tokens: {usage.thoughtsTokenCount ?? "Unknown"}</p>
               <p>Total tokens: {usage.totalTokenCount ?? "Unknown"}</p>
               <small>Provider-reported usage, not a billing estimate.</small>
+              <GeminiCost usage={usage} />
             </section>
           )}
           <p>
@@ -869,5 +871,47 @@ function DocumentReader({ text }) {
         );
       })}
     </article>
+  );
+}
+
+function GeminiCost({ usage }) {
+  const [inputRate, setInputRate] = useState("");
+  const [outputRate, setOutputRate] = useState("");
+  const estimate = estimateGeminiCost(usage, inputRate, outputRate);
+  return (
+    <div>
+      <h3>AI Cost Calculator</h3>
+      <p>Enter your own flat USD rates per million tokens for this model.</p>
+      <div className="twocol">
+        <label>
+          Input price (USD per million tokens)
+          <input
+            inputMode="decimal"
+            value={inputRate}
+            maxLength={13}
+            onChange={(event) => setInputRate(event.target.value)}
+          />
+        </label>
+        <label>
+          Output price (USD per million tokens)
+          <input
+            inputMode="decimal"
+            value={outputRate}
+            maxLength={13}
+            onChange={(event) => setOutputRate(event.target.value)}
+          />
+        </label>
+      </div>
+      <p aria-live="polite">
+        Estimated cost:{" "}
+        {estimate === null ? "Unavailable" : "USD " + estimate.toFixed(8)}
+      </p>
+      <small>
+        Flat-rate scenario only, including reported thinking tokens at the
+        output rate. Missing or inconsistent counts prevent an estimate.
+        Excludes caching discounts, tiers, taxes and other fees. Not a bill
+        or spending limit. Rates and estimates are not saved.
+      </small>
+    </div>
   );
 }
