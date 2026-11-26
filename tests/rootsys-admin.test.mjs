@@ -1,11 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { guard } from "../lib/request-guard.mjs";
+import { rootsysAllocation } from "../lib/providers.mjs";
 import { POST } from "../app/api/rootsys/admin/route.js";
 
 const env = {
   VERCEL_ENV: "preview",
   ROOTSYS_ENABLED: "false",
+  ROOTSYS_DAILY_OUTPUT_BUDGET: "16000",
   ROOTSYS_OWNER_ID: "fixture-owner",
   ROOTSYS_API_KEY: "fixture-secret",
   NEXT_PUBLIC_SUPABASE_URL: "https://fixture.supabase.co",
@@ -45,6 +47,8 @@ test("disabled pilot owner readiness makes no provider request", async () => {
     assert.equal(result.keyFormatValid, true);
     assert.equal(result.redisVerified, true);
     assert.equal(result.productionBlocked, true);
+    assert.equal(result.dailyAttempts, 2);
+    assert.equal(result.dailyOutputBudget, 16000);
     assert.equal(calls, 2);
   } finally {
     globalThis.fetch = original;
@@ -69,4 +73,43 @@ test("admin readiness denies production and non-owner access", async () => {
     }),
     (error) => error.status === 403,
   );
+});
+
+test("owner allocation is bounded and rejects invalid configuration", () => {
+  assert.equal(rootsysAllocation({}).dailyAttempts, 5);
+  for (const value of ["0", "8000", "16000", "24000", "32000", "40000"]) {
+    const allocation = rootsysAllocation({
+      ROOTSYS_DAILY_OUTPUT_BUDGET: value,
+    });
+    assert.equal(allocation.dailyAttempts * 8000, Number(value));
+  }
+  for (const value of ["", "-1", "9000", "40001", "NaN", "4e4"]) {
+    assert.equal(rootsysAllocation({ ROOTSYS_DAILY_OUTPUT_BUDGET: value }), null);
+  }
+});
+
+test("generation allocation is enforced before provider access", async () => {
+  const active = { ...env, ROOTSYS_ENABLED: "true" };
+  const calls = [];
+  const fetcher = async (url, options) => {
+    calls.push(url);
+    if (url.includes("supabase.co"))
+      return Response.json({ id: "fixture-owner" });
+    assert.equal(url, "https://redis.example/");
+    assert.equal(JSON.parse(options.body)[5], "2");
+    return Response.json({ result: 1 });
+  };
+  await guard(request(), "rootsys", { env: active, fetcher });
+  assert.equal(calls.length, 2);
+  for (const [value, status] of [["0", 429], ["9000", 503]]) {
+    calls.length = 0;
+    await assert.rejects(
+      guard(request(), "rootsys", {
+        env: { ...active, ROOTSYS_DAILY_OUTPUT_BUDGET: value },
+        fetcher,
+      }),
+      (error) => error.status === status,
+    );
+    assert.equal(calls.length, 1);
+  }
 });
