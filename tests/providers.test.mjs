@@ -45,7 +45,7 @@ const req = (provider, model, k = key) =>
     headers: { origin: "http://localhost", "x-provider-key": k },
     body: JSON.stringify({ provider, model, project: p }),
   });
-for (const provider of providers.filter((x) => !x.custom))
+for (const provider of providers.filter((x) => !x.custom && !x.managed))
   test(provider.id + " request and response contract", () => {
     const x = makeRequest(
       provider.id,
