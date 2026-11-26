@@ -966,7 +966,7 @@ test("failed cloud logout preserves local sign-out and projects", async ({
   await expect(
     page.getByRole("heading", { name: "Welcome back" }),
   ).toBeVisible();
-  await expect(page.getByRole("status")).toContainText(
+  await expect(page.locator(".notice")).toHaveText(
     "Previous session signed out locally. Cloud revocation could not be confirmed.",
   );
   await expect(
