@@ -56,9 +56,15 @@ export default function RootsysAdmin({ session }) {
               <p>{readiness.model}</p>
             </div>
           </div>
-          <p>Daily generation attempts: {readiness.dailyAttempts ?? "Blocked"}</p>
-          <p>Requested output budget: {readiness.dailyOutputBudget ?? "Invalid"}</p>
-          <p>Output cap per request: {readiness.outputPerRequest ?? "Unknown"}</p>
+          <p>
+            Daily generation attempts: {readiness.dailyAttempts ?? "Blocked"}
+          </p>
+          <p>
+            Requested output budget: {readiness.dailyOutputBudget ?? "Invalid"}
+          </p>
+          <p>
+            Output cap per request: {readiness.outputPerRequest ?? "Unknown"}
+          </p>
           <p>Status checks per minute: {readiness.inspectionsPerMinute}</p>
           <small>
             Output reservations are not actual billed tokens. Input and other
