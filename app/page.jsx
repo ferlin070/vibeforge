@@ -20,6 +20,8 @@ import AgentHub from "./agent-hub.jsx";
 import TemplateCatalog from "./templates.jsx";
 import Team from "./team.jsx";
 import Operations from "./operations.jsx";
+import BackupImport from "./backup-import.jsx";
+import { restoreBackupAsDrafts } from "../lib/backup.mjs";
 import { normalizeLanguage, translate } from "../lib/language.mjs";
 import {
   applyProjectPatch,
@@ -313,6 +315,20 @@ export default function Home() {
     );
     setProjects(next);
     setSelected(row.id);
+  };
+  const restoreBackup = (raw) => {
+    if (recovery) throw Error("Complete local storage recovery first.");
+    const result = restoreBackupAsDrafts(
+      raw,
+      latestProjects.current,
+      () => crypto.randomUUID(),
+      new Date().toISOString(),
+      (items) => localStorage.setItem("vibeforge-v2", JSON.stringify(items)),
+    );
+    latestProjects.current = result.projects;
+    setProjects(result.projects);
+    if (!selected) setSelected(result.projects[0].id);
+    return result.imported;
   };
   const addRecoveredDraft = (item) => {
     validateProject(item);
@@ -1060,28 +1076,31 @@ export default function Home() {
             />
           )}
           {view === "guide" && (
-            <Guide
-              go={go}
-              projects={projects}
-              exportAll={() =>
-                download(
-                  JSON.stringify(projects, null, 2),
-                  "vibeforge-local-backup.json",
-                  "application/json",
-                )
-              }
-              clearAll={() => {
-                if (
-                  confirm(
-                    "Permanently remove every local project from this browser? Cloud snapshots are not deleted. Export first if needed.",
+            <>
+              <BackupImport onRestore={restoreBackup} recovery={!!recovery} />
+              <Guide
+                go={go}
+                projects={projects}
+                exportAll={() =>
+                  download(
+                    JSON.stringify(projects, null, 2),
+                    "vibeforge-local-backup.json",
+                    "application/json",
                   )
-                ) {
-                  setProjects([]);
-                  setSelected("");
-                  setNotice("Local projects cleared.");
                 }
-              }}
-            />
+                clearAll={() => {
+                  if (
+                    confirm(
+                      "Permanently remove every local project from this browser? Cloud snapshots are not deleted. Export first if needed.",
+                    )
+                  ) {
+                    setProjects([]);
+                    setSelected("");
+                    setNotice("Local projects cleared.");
+                  }
+                }}
+              />
+            </>
           )}
           {view === "operations" && (
             <Operations
