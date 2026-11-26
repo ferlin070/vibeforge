@@ -25,6 +25,7 @@ export default function Cloud({
   clearRecovery,
   onContinue,
   onDraftCopy,
+  onSignOut,
 }) {
   const [email, setEmail] = useState(""),
     [password, setPassword] = useState(""),
@@ -384,16 +385,7 @@ export default function Cloud({
             className="ghost"
             disabled={busy}
             onClick={() =>
-              run(async () => {
-                // Clear local identity immediately; a delayed network response
-                // must never clear a newer session or revive the old one.
-                setSession(null);
-                await request(
-                  "/auth/v1/logout?scope=local",
-                  { method: "POST" },
-                  session.token,
-                );
-              })
+              onSignOut(session)
             }
           >
             Sign out
