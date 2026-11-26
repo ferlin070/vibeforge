@@ -25,12 +25,6 @@ jobs:
       - run: npm run lint
       - run: npm audit --omit=dev --audit-level=high
       - run: npm run format:check
-        id: format
-      - name: Show backup formatting diff on failure
-        if: failure() && steps.format.outcome == 'failure'
-        run: |
-          npx --no-install prettier --write app/page.jsx app/backup-import.jsx lib/backup.mjs tests/backup.test.mjs e2e/integrations.spec.mjs docs/BETA-BACKUP.md
-          git --no-pager diff -- app/page.jsx app/backup-import.jsx lib/backup.mjs tests/backup.test.mjs e2e/integrations.spec.mjs docs/BETA-BACKUP.md
       - run: npx --no-install playwright install --with-deps chromium
       - run: npm run test:e2e
         env:
