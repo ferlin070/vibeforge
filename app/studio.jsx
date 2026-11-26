@@ -8,7 +8,11 @@ import {
 } from "../lib/redact.mjs";
 import { useState, useEffect } from "react";
 import Architect from "./architect.jsx";
-import { generationContext, generationSummary } from "../lib/model-control.mjs";
+import {
+  generationContext,
+  generationSummary,
+  geminiUsage,
+} from "../lib/model-control.mjs";
 import { scoreBlueprint } from "../lib/blueprint-quality.mjs";
 import {
   sections,
@@ -135,6 +139,7 @@ export default function Studio({
         blueprint,
         source: "AI-generated draft · " + currentProvider.label + " / " + model,
         base: p,
+        usage: provider === "gemini" ? geminiUsage(data.usage) : null,
       });
       setMsg(
         "Candidate generated. Review its quality and apply explicitly. Existing work is unchanged.",
@@ -454,6 +459,20 @@ export default function Studio({
         <section className="panel studioPanel">
           <h2>Generated candidate — not applied</h2>
           <BlueprintScore blueprint={candidate.blueprint} />
+          {candidate.usage && (
+            <section className="summary" aria-label="Gemini token usage">
+              <h3>Gemini token usage</h3>
+              <p>Input tokens: {candidate.usage.promptTokenCount ?? "Unknown"}</p>
+              <p>
+                Output tokens: {candidate.usage.candidatesTokenCount ?? "Unknown"}
+              </p>
+              <p>
+                Thinking tokens: {candidate.usage.thoughtsTokenCount ?? "Unknown"}
+              </p>
+              <p>Total tokens: {candidate.usage.totalTokenCount ?? "Unknown"}</p>
+              <small>Provider-reported usage, not a billing estimate.</small>
+            </section>
+          )}
           <p>
             {candidate.blueprint.tasks.length} tasks ·{" "}
             {candidate.blueprint.questions.length} open questions
