@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import RootsysAdmin from "./rootsys-admin.jsx";
 
 export default function RootsysStatus({ session }) {
   const [status, setStatus] = useState(null);
@@ -30,6 +31,7 @@ export default function RootsysStatus({ session }) {
 
   return (
     <section className="summary" aria-label="Rootsys account status">
+      <RootsysAdmin session={session} />
       <h3>Rootsys models and quota</h3>
       <p>Private owner inspection. No inference or automatic polling.</p>
       <button type="button" onClick={refresh} disabled={busy}>
@@ -38,9 +40,7 @@ export default function RootsysStatus({ session }) {
       {message && <p role="status">{message}</p>}
       {status && (
         <>
-          <p>
-            Pilot model: {status.pilotAvailable ? "Listed" : "Not listed"}
-          </p>
+          <p>Pilot model: {status.pilotAvailable ? "Listed" : "Not listed"}</p>
           <p>Remaining tokens: {status.quota.remaining ?? "Unknown"}</p>
           <p>Used tokens: {status.quota.used ?? "Unknown"}</p>
           <p>Total tokens: {status.quota.total ?? "Unknown"}</p>
