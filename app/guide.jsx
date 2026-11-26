@@ -142,10 +142,10 @@ export default function Guide({ go, projects, exportAll, clearAll }) {
           VibeForge does not remotely execute coding agents, run arbitrary
           repository code, certify test results or deploy user projects
           automatically. The optional local OpenCode runner requires an
-          explicitly confirmed launch on a trusted checkout.
-          Custom gateways require sign-in, public HTTPS and approved hosts in
-          hosted deployments. Always verify actual test evidence and obtain
-          release approval.
+          explicitly confirmed launch on a trusted checkout. Custom gateways
+          require sign-in, public HTTPS and approved hosts in hosted
+          deployments. Always verify actual test evidence and obtain release
+          approval.
         </p>
       </section>
     </>
