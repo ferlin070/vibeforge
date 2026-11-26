@@ -56,11 +56,13 @@ export default function RootsysAdmin({ session }) {
               <p>{readiness.model}</p>
             </div>
           </div>
-          <p>Daily generation attempts: {readiness.dailyAttempts}</p>
+          <p>Daily generation attempts: {readiness.dailyAttempts ?? "Blocked"}</p>
+          <p>Requested output budget: {readiness.dailyOutputBudget ?? "Invalid"}</p>
+          <p>Output cap per request: {readiness.outputPerRequest ?? "Unknown"}</p>
           <p>Status checks per minute: {readiness.inspectionsPerMinute}</p>
           <small>
-            Configuration checks do not validate provider authentication or
-            guarantee a token budget. Settings are managed in Vercel.
+            Output reservations are not actual billed tokens. Input and other
+            provider charges are excluded. Settings are managed in Vercel.
           </small>
         </>
       )}
