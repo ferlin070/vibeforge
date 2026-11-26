@@ -26,11 +26,12 @@ jobs:
       - run: npm audit --omit=dev --audit-level=high
       - run: npm run format:check
         id: format
-      - name: Show session formatting diff on failure
+      - name: Show formatting diff on failure
         if: failure() && steps.format.outcome == 'failure'
         run: |
-          npx --no-install prettier --write app/cloud.jsx app/page.jsx e2e/integrations.spec.mjs docs/BETA-SESSION-LIFECYCLE.md
-          git --no-pager diff -- app/cloud.jsx app/page.jsx e2e/integrations.spec.mjs docs/BETA-SESSION-LIFECYCLE.md
+          npx --no-install prettier --write .
+          git --no-pager diff --stat
+          git --no-pager diff --
       - run: npx --no-install playwright install --with-deps chromium
       - run: npm run test:e2e
         env:
