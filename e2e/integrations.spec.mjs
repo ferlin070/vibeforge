@@ -824,3 +824,98 @@ test("local backup import validates and restores independent drafts", async ({
   await page.reload();
   expect(await stored(page)).toEqual(after);
 });
+
+test("late sign-in cannot activate a departed account view", async ({ page }) => {
+  let release;
+  const gate = new Promise((resolve) => {
+    release = resolve;
+  });
+  let started;
+  const pending = new Promise((resolve) => {
+    started = resolve;
+  });
+  await page.route(cloud + "/**", async (route) => {
+    const headers = {
+      "access-control-allow-origin": origin,
+      "access-control-allow-headers": "apikey, authorization, content-type",
+      "access-control-allow-methods": "POST, OPTIONS",
+    };
+    if (route.request().method() === "OPTIONS")
+      return route.fulfill({ status: 204, headers });
+    started();
+    await gate;
+    await route.fulfill({ status: 200, headers, json: token });
+  });
+  await page.goto("/?view=cloud");
+  await page.getByLabel("Email", { exact: true }).fill(token.user.email);
+  await page.getByLabel("Password", { exact: true }).fill("fixture-password");
+  await page.locator("form").getByRole("button", { name: "Sign in" }).click();
+  await pending;
+  await page.locator(".sidebar").getByRole("button", { name: "Overview", exact: true }).click();
+  const response = page.waitForResponse(
+    (res) => res.url().includes("/auth/v1/token") && res.status() === 200,
+  );
+  release();
+  await response;
+  await page.locator(".sidebar").getByRole("button", { name: "Cloud account" }).click();
+  await expect(page.getByRole("heading", { name: "Welcome back" })).toBeVisible();
+  expect(await stored(page)).toEqual([approved]);
+});
+
+test("delayed logout cannot clear a replacement account", async ({ page }) => {
+  let release;
+  const gate = new Promise((resolve) => {
+    release = resolve;
+  });
+  let started;
+  const pending = new Promise((resolve) => {
+    started = resolve;
+  });
+  const other = {
+    ...token,
+    access_token: "fixture.other.token",
+    refresh_token: "fixture-other-refresh",
+    user: { id: "fixture-other", email: "other@example.invalid" },
+  };
+  await page.route(cloud + "/**", async (route) => {
+    const req = route.request();
+    const url = new URL(req.url());
+    const headers = {
+      "access-control-allow-origin": origin,
+      "access-control-allow-headers": "apikey, authorization, content-type",
+      "access-control-allow-methods": "POST, OPTIONS",
+    };
+    if (req.method() === "OPTIONS")
+      return route.fulfill({ status: 204, headers });
+    if (url.pathname === "/auth/v1/logout") {
+      expect(url.searchParams.get("scope")).toBe("local");
+      expect(req.headers().authorization).toBe("Bearer " + token.access_token);
+      started();
+      await gate;
+      return route.fulfill({ status: 204, headers });
+    }
+    return route.fulfill({
+      status: 200,
+      headers,
+      json: req.postDataJSON().email === other.user.email ? other : token,
+    });
+  });
+  const login = async (email) => {
+    await page.getByLabel("Email", { exact: true }).fill(email);
+    await page.getByLabel("Password", { exact: true }).fill("fixture-password");
+    await page.locator("form").getByRole("button", { name: "Sign in" }).click();
+    await expect(page.getByRole("heading", { name: email })).toBeVisible();
+  };
+  await page.goto("/?view=cloud");
+  await login(token.user.email);
+  await page.getByRole("button", { name: "Sign out" }).click();
+  await pending;
+  await login(other.user.email);
+  const response = page.waitForResponse(
+    (res) => res.url().includes("/auth/v1/logout") && res.status() === 204,
+  );
+  release();
+  await response;
+  await expect(page.getByRole("heading", { name: other.user.email })).toBeVisible();
+  expect(await stored(page)).toEqual([approved]);
+});
