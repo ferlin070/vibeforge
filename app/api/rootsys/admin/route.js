@@ -1,5 +1,5 @@
 import { guard, RequestError } from "../../../../lib/request-guard.mjs";
-import { validKey } from "../../../../lib/providers.mjs";
+import { validKey, rootsysAllocation } from "../../../../lib/providers.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 15;
@@ -11,6 +11,7 @@ export async function POST(req) {
     await guard(req, "rootsys-admin");
     if (req.headers.has("x-provider-key") || req.body)
       return reply({ error: "Unexpected request data." }, 400);
+    const allocation = rootsysAllocation();
     return reply({
       enabled: process.env.ROOTSYS_ENABLED === "true",
       keyFormatValid: validKey(process.env.ROOTSYS_API_KEY || ""),
@@ -18,7 +19,10 @@ export async function POST(req) {
       redisVerified: true,
       productionBlocked: true,
       model: "deepseek-v4-flash",
-      dailyAttempts: 5,
+      allocationValid: allocation !== null,
+      dailyAttempts: allocation?.dailyAttempts ?? null,
+      dailyOutputBudget: allocation?.outputBudget ?? null,
+      outputPerRequest: allocation?.outputPerRequest ?? null,
       inspectionsPerMinute: 6,
     });
   } catch (error) {
