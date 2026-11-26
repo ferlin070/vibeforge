@@ -53,3 +53,7 @@ Verified-account limits: AI 6/minute, token-backed repository and CI 12/minute e
 ## Rootsys managed pilot
 
 Rootsys uses the fixed `https://rootsys.cloud/v1/chat/completions` endpoint and `deepseek-v4-flash` model. The browser sends no provider key. Server-only `ROOTSYS_API_KEY`, `ROOTSYS_OWNER_ID` and `ROOTSYS_ENABLED=true` are required, in Vercel Preview only. The owner ID is checked against the verified Supabase user, not a client claim. Redis is mandatory and limits the pilot to five attempts per UTC day; this is a request cap, not a token or billing cap. No fallback or retry. The pilot remains disabled by default. Do not configure production or use Mod variants that replace the system prompt. Model availability, response compatibility and commercial permission remain unverified. Review provider privacy and usage terms before real customer data is sent.
+
+### Rootsys owner inspection
+
+`POST /api/rootsys/status` checks the same verified owner, Preview-only activation and distributed Redis as generation, but uses a separate six-per-minute request bucket. It sends no project data and calls only the fixed GET `/v1/models` and `/v1/quota` endpoints. No inference is requested. The response contains sanitized model IDs, pilot model availability and recognized token/expiry fields only. Unknown quota fields stay null; actual field names and compatibility need live verification. Inspection never enables a model for generation. Mod models are not eligible. No automatic polling, retry or storage.
