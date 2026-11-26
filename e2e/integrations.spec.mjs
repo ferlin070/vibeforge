@@ -825,7 +825,9 @@ test("local backup import validates and restores independent drafts", async ({
   expect(await stored(page)).toEqual(after);
 });
 
-test("late sign-in cannot activate a departed account view", async ({ page }) => {
+test("late sign-in cannot activate a departed account view", async ({
+  page,
+}) => {
   let release;
   const gate = new Promise((resolve) => {
     release = resolve;
@@ -851,14 +853,22 @@ test("late sign-in cannot activate a departed account view", async ({ page }) =>
   await page.getByLabel("Password", { exact: true }).fill("fixture-password");
   await page.locator("form").getByRole("button", { name: "Sign in" }).click();
   await pending;
-  await page.locator(".sidebar").getByRole("button", { name: "Overview", exact: true }).click();
+  await page
+    .locator(".sidebar")
+    .getByRole("button", { name: "Overview", exact: true })
+    .click();
   const response = page.waitForResponse(
     (res) => res.url().includes("/auth/v1/token") && res.status() === 200,
   );
   release();
   await response;
-  await page.locator(".sidebar").getByRole("button", { name: "Cloud account" }).click();
-  await expect(page.getByRole("heading", { name: "Welcome back" })).toBeVisible();
+  await page
+    .locator(".sidebar")
+    .getByRole("button", { name: "Cloud account" })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Welcome back" }),
+  ).toBeVisible();
   expect(await stored(page)).toEqual([approved]);
 });
 
@@ -916,6 +926,8 @@ test("delayed logout cannot clear a replacement account", async ({ page }) => {
   );
   release();
   await response;
-  await expect(page.getByRole("heading", { name: other.user.email })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: other.user.email }),
+  ).toBeVisible();
   expect(await stored(page)).toEqual([approved]);
 });
