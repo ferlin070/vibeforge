@@ -1,6 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { generationContext, generationSummary } from "../lib/model-control.mjs";
+import {
+  generationContext,
+  generationSummary,
+  geminiUsage,
+} from "../lib/model-control.mjs";
 
 const project = {
   name: "Fixture",
@@ -38,4 +42,29 @@ test("model control does not mark arbitrary model IDs as available", () => {
     generationSummary("unknown", "model", project, false).valid,
     false,
   );
+});
+
+test("Gemini usage keeps only valid provider-reported token counts", () => {
+  assert.deepEqual(
+    geminiUsage({
+      promptTokenCount: 100,
+      candidatesTokenCount: 200,
+      thoughtsTokenCount: 0,
+      totalTokenCount: 300,
+      secret: "synthetic-key",
+    }),
+    {
+      promptTokenCount: 100,
+      candidatesTokenCount: 200,
+      thoughtsTokenCount: 0,
+      totalTokenCount: 300,
+    },
+  );
+  assert.deepEqual(
+    geminiUsage({ totalTokenCount: 7, promptTokenCount: -1 }),
+    { totalTokenCount: 7 },
+  );
+  assert.equal(geminiUsage({ totalTokenCount: "123" }), null);
+  assert.equal(geminiUsage({ totalTokenCount: Infinity }), null);
+  assert.equal(geminiUsage(undefined), null);
 });
