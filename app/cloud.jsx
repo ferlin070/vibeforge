@@ -385,26 +385,14 @@ export default function Cloud({
             disabled={busy}
             onClick={() =>
               run(async () => {
-                try {
-                  await request(
-                    "/auth/v1/logout",
-                    { method: "POST" },
-                    session.token,
-                  );
-                } finally {
-                  // Explicit logout must clear the initiating session even
-                  // when navigation unmounts the account panel.
-                  setSession((current) =>
-                    current?.id === session.id &&
-                    current?.refreshToken === session.refreshToken
-                      ? null
-                      : current,
-                  );
-                  if (active.current) {
-                    setRemote([]);
-                    setMsg("Signed out locally.");
-                  }
-                }
+                // Clear local identity immediately; a delayed network response
+                // must never clear a newer session or revive the old one.
+                setSession(null);
+                await request(
+                  "/auth/v1/logout?scope=local",
+                  { method: "POST" },
+                  session.token,
+                );
               })
             }
           >
