@@ -65,7 +65,9 @@ export default function BackupImport({ onRestore, recovery }) {
           <button
             disabled={recovery || busy}
             onClick={() => {
-              if (!confirm("Import all validated projects as unapproved drafts?"))
+              if (
+                !confirm("Import all validated projects as unapproved drafts?")
+              )
                 return;
               try {
                 const count = onRestore(candidate.raw);
