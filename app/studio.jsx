@@ -9,6 +9,7 @@ import {
 import { useState, useEffect } from "react";
 import Architect from "./architect.jsx";
 import RootsysStatus from "./rootsys-status.jsx";
+import { ROOTSYS_PROMPT_VERSION } from "../lib/rootsys-prompt.mjs";
 import {
   generationContext,
   generationSummary,
@@ -469,6 +470,7 @@ export default function Studio({
             <summary>Preview exact project context sent to provider</summary>
             <pre>{JSON.stringify(modelSummary.context, null, 2)}</pre>
           </details>
+          {managed && <p>Prompt profile: {ROOTSYS_PROMPT_VERSION}</p>}
           <small>{modelSummary.notice}</small>
         </section>
         <button
