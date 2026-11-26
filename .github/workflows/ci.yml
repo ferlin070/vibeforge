@@ -29,8 +29,8 @@ jobs:
       - name: Show operations formatting diff on failure
         if: failure() && steps.format.outcome == 'failure'
         run: |
-          npx --no-install prettier --write app/page.jsx app/operations.jsx lib/operations.mjs lib/language.mjs lib/navigation.mjs tests/operations.test.mjs e2e/integrations.spec.mjs docs/BETA-OPERATIONS.md
-          git --no-pager diff -- app/page.jsx app/operations.jsx lib/operations.mjs lib/language.mjs lib/navigation.mjs tests/operations.test.mjs e2e/integrations.spec.mjs docs/BETA-OPERATIONS.md
+          npx --no-install prettier --write app/guide.jsx app/page.jsx app/operations.jsx lib/operations.mjs lib/language.mjs lib/navigation.mjs tests/operations.test.mjs e2e/integrations.spec.mjs docs/BETA-OPERATIONS.md
+          git --no-pager diff -- app/guide.jsx app/page.jsx app/operations.jsx lib/operations.mjs lib/language.mjs lib/navigation.mjs tests/operations.test.mjs e2e/integrations.spec.mjs docs/BETA-OPERATIONS.md
       - run: npx --no-install playwright install --with-deps chromium
       - run: npm run test:e2e
         env:
