@@ -29,9 +29,7 @@ export async function POST(req) {
   try {
     if (!sameOrigin(req))
       return reply({ error: "Cross-origin request blocked." }, 403);
-    const key = req.headers.get("x-provider-key") || "";
-    if (!validKey(key))
-      return reply({ error: "Supply your own valid provider API key." }, 400);
+    const suppliedKey = req.headers.get("x-provider-key") || "";
     if (Number(req.headers.get("content-length") || 0) > 24000)
       return reply({ error: "Request too large" }, 413);
     const raw = await boundedText(req, 24000);
@@ -57,6 +55,16 @@ export async function POST(req) {
       p.idea.length > 12000
     )
       return reply({ error: "Invalid project, provider or model ID." }, 400);
+    const managed = provider === "rootsys";
+    if (managed && suppliedKey)
+      return reply({ error: "Managed provider does not accept client keys." }, 400);
+    if (managed) await guard(req, "rootsys");
+    const key = managed ? process.env.ROOTSYS_API_KEY || "" : suppliedKey;
+    if (!validKey(key))
+      return reply(
+        { error: managed ? "Managed provider not configured." : "Supply your own valid provider API key." },
+        managed ? 503 : 400,
+      );
     const data = redactData({
       name: p.name,
       type: String(p.type || "").slice(0, 100),
@@ -100,7 +108,7 @@ export async function POST(req) {
         400,
       );
     }
-    await guard(req, "blueprint", {
+    if (!managed) await guard(req, "blueprint", {
       custom: !!providerById(provider).custom,
       url: spec.url,
     });
