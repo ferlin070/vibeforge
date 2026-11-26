@@ -878,6 +878,8 @@ function GeminiCost({ usage }) {
   const [inputRate, setInputRate] = useState("");
   const [outputRate, setOutputRate] = useState("");
   const estimate = estimateGeminiCost(usage, inputRate, outputRate);
+  const costText =
+    estimate === null ? "Unavailable" : "USD " + estimate.toFixed(8);
   return (
     <div>
       <h3>AI Cost Calculator</h3>
@@ -902,15 +904,12 @@ function GeminiCost({ usage }) {
           />
         </label>
       </div>
-      <p aria-live="polite">
-        Estimated cost:{" "}
-        {estimate === null ? "Unavailable" : "USD " + estimate.toFixed(8)}
-      </p>
+      <p aria-live="polite">Estimated cost: {costText}</p>
       <small>
-        Flat-rate scenario only, including reported thinking tokens at the
-        output rate. Missing or inconsistent counts prevent an estimate.
-        Excludes caching discounts, tiers, taxes and other fees. Not a bill
-        or spending limit. Rates and estimates are not saved.
+        Flat-rate scenario only. Thinking tokens use the output rate. Missing
+        or inconsistent counts prevent an estimate. Excludes caching discounts,
+        tiers, taxes and other fees. Not a bill or spending limit. Rates and
+        estimates are not saved.
       </small>
     </div>
   );
