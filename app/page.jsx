@@ -119,7 +119,9 @@ export default function Home() {
       setView("guide");
     }
     try {
-      setLanguage(normalizeLanguage(localStorage.getItem("vibeforge-language")));
+      setLanguage(
+        normalizeLanguage(localStorage.getItem("vibeforge-language")),
+      );
     } catch {
       // Language preference is independent of project recovery.
     }
