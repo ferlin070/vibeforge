@@ -9,6 +9,7 @@ import {
 import { starterBlueprint } from "../lib/blueprint.mjs";
 import { POST } from "../app/api/blueprint/route.js";
 import { rootsysBlueprintPrompt } from "../lib/rootsys-prompt.mjs";
+import { rootsysRoutePlan } from "../lib/rootsys-router.mjs";
 process.env.NODE_ENV = "development";
 delete process.env.VERCEL_ENV;
 delete process.env.VIBEFORGE_REQUIRE_AUTH;
@@ -172,6 +173,7 @@ test("Rootsys owner-only pilot fails closed and never accepts browser keys", asy
       assert.equal(url, "https://rootsys.cloud/v1/chat/completions");
       assert.equal(opts.headers.Authorization, "Bearer " + key);
       const body = JSON.parse(opts.body);
+      assert.equal(body.model, "deepseek-v4-flash");
       assert.equal(body.messages[0].content, rootsysBlueprintPrompt());
       assert.equal(body.messages[1].role, "user");
       assert.equal(JSON.parse(body.messages[1].content).idea, p.idea);
@@ -202,6 +204,7 @@ test("Rootsys owner-only pilot fails closed and never accepts browser keys", asy
     const body = await result.text();
     assert.equal(body.includes(key), false);
     assert.deepEqual(JSON.parse(body).blueprint, blueprint);
+    assert.deepEqual(JSON.parse(body).routing, rootsysRoutePlan(p));
     assert.equal(calls, 1);
   } finally {
     globalThis.fetch = original;
