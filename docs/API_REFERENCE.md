@@ -49,3 +49,7 @@ Verified-account limits: AI 6/minute, token-backed repository and CI 12/minute e
 ### RC5 branch selection
 
 `POST /api/repository` accepts optional `branch` (portable branch name, maximum 255 characters). Omit or pass an empty string for the default branch. The server resolves the exact `refs/heads/` reference, verifies the commit SHA and pins the manifest and tree to that commit. A missing branch returns 404. No tags, commits by user input, source execution or writes.
+
+## Rootsys managed pilot
+
+Rootsys uses the fixed `https://rootsys.cloud/v1/chat/completions` endpoint and `deepseek-v4-flash` model. The browser sends no provider key. Server-only `ROOTSYS_API_KEY`, `ROOTSYS_OWNER_ID` and `ROOTSYS_ENABLED=true` are required, in Vercel Preview only. The owner ID is checked against the verified Supabase user, not a client claim. Redis is mandatory and limits the pilot to five attempts per UTC day; this is a request cap, not a token or billing cap. No fallback or retry. The pilot remains disabled by default. Do not configure production or use Mod variants that replace the system prompt. Model availability, response compatibility and commercial permission remain unverified. Review provider privacy and usage terms before real customer data is sent.
