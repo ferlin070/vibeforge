@@ -32,7 +32,11 @@ import {
 import { agents } from "../lib/context.mjs";
 import { stages, makeBrief, makePrompt } from "../lib/planner.mjs";
 import { recoverLocal, validateProject } from "../lib/project-schema.mjs";
-import { refreshSession, recoveryFromFragment } from "../lib/cloud-auth.mjs";
+import {
+  cloudRequest,
+  refreshSession,
+  recoveryFromFragment,
+} from "../lib/cloud-auth.mjs";
 import { restoreSnapshotLocally } from "../lib/workspace.mjs";
 const empty = {
   name: "",
@@ -184,6 +188,21 @@ export default function Home() {
       clearTimeout(expiry);
     };
   }, [session]);
+  const signOut = async (initiating) => {
+    setSession(null);
+    setNotice("Signed out locally.");
+    try {
+      await cloudRequest(
+        "/auth/v1/logout?scope=local",
+        { method: "POST" },
+        initiating.token,
+      );
+    } catch {
+      setNotice(
+        "Previous session signed out locally. Cloud revocation could not be confirmed.",
+      );
+    }
+  };
   const p = projects.find((x) => x.id === selected);
   // Preserve unsaved editor text when unrelated project fields change.
   /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
@@ -1132,6 +1151,7 @@ export default function Home() {
               clearRecovery={() => setRecoveryToken(null)}
               onContinue={() => go("overview")}
               onDraftCopy={addRecoveredDraft}
+              onSignOut={signOut}
             />
           )}
           {["workflow", "docs", "prompt"].includes(view) && (
