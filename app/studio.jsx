@@ -10,6 +10,7 @@ import { useState, useEffect } from "react";
 import Architect from "./architect.jsx";
 import RootsysStatus from "./rootsys-status.jsx";
 import { ROOTSYS_PROMPT_VERSION } from "../lib/rootsys-prompt.mjs";
+import { rootsysRoutePlan } from "../lib/rootsys-router.mjs";
 import {
   generationContext,
   generationSummary,
@@ -80,6 +81,7 @@ export default function Studio({
   const managed = currentProvider.managed === true;
   const usage = candidate?.usage;
   const modelSummary = generationSummary(provider, model, p, includeRepo);
+  const routing = managed ? rootsysRoutePlan(modelSummary.context) : null;
   const b = p.blueprint,
     evidence = p.evidence || {},
     t = b?.tasks.find((x) => x.id === taskId) || b?.tasks[0];
@@ -471,6 +473,19 @@ export default function Studio({
             <pre>{JSON.stringify(modelSummary.context, null, 2)}</pre>
           </details>
           {managed && <p>Prompt profile: {ROOTSYS_PROMPT_VERSION}</p>}
+          {routing && (
+            <div>
+              <p>Routing policy: {routing.policy}</p>
+              <p>Context class: {routing.contextClass}</p>
+              <p>Selected model: {routing.model}</p>
+              <p>Requested output limit: {routing.outputLimit}</p>
+              <p>{routing.reason}</p>
+              {routing.evaluationCandidate && (
+                <p>Evaluation only: {routing.evaluationCandidate}</p>
+              )}
+              <small>No automatic model switching or fallback.</small>
+            </div>
+          )}
           <small>{modelSummary.notice}</small>
         </section>
         <button
