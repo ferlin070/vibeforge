@@ -931,3 +931,52 @@ test("delayed logout cannot clear a replacement account", async ({ page }) => {
   ).toBeVisible();
   expect(await stored(page)).toEqual([approved]);
 });
+
+test("failed cloud logout preserves local sign-out and projects", async ({
+  page,
+}) => {
+  let logoutCalls = 0;
+  await page.route(cloud + "/**", async (route) => {
+    const req = route.request();
+    const url = new URL(req.url());
+    const headers = {
+      "access-control-allow-origin": origin,
+      "access-control-allow-headers": "apikey, authorization, content-type",
+      "access-control-allow-methods": "POST, OPTIONS",
+    };
+    if (req.method() === "OPTIONS")
+      return route.fulfill({ status: 204, headers });
+    if (url.pathname === "/auth/v1/logout") {
+      expect(url.searchParams.get("scope")).toBe("local");
+      expect(req.headers().authorization).toBe("Bearer " + token.access_token);
+      logoutCalls++;
+      return route.fulfill({ status: 503, headers, json: {} });
+    }
+    expect(url.pathname).toBe("/auth/v1/token");
+    return route.fulfill({ status: 200, headers, json: token });
+  });
+  await page.goto("/?view=cloud");
+  await page.getByLabel("Email", { exact: true }).fill(token.user.email);
+  await page.getByLabel("Password", { exact: true }).fill("fixture-password");
+  await page.locator("form").getByRole("button", { name: "Sign in" }).click();
+  await expect(
+    page.getByRole("heading", { name: token.user.email }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Sign out" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Welcome back" }),
+  ).toBeVisible();
+  await expect(page.getByRole("status")).toContainText(
+    "Previous session signed out locally. Cloud revocation could not be confirmed.",
+  );
+  await expect(
+    page.getByRole("heading", { name: token.user.email }),
+  ).toHaveCount(0);
+  expect(logoutCalls).toBe(1);
+  expect(await stored(page)).toEqual([approved]);
+  await page.reload();
+  await expect(
+    page.getByRole("heading", { name: "Welcome back" }),
+  ).toBeVisible();
+  expect(await stored(page)).toEqual([approved]);
+});
