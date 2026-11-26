@@ -392,10 +392,15 @@ export default function Cloud({
                     session.token,
                   );
                 } finally {
+                  // Explicit logout must clear the initiating session even
+                  // when navigation unmounts the account panel.
+                  setSession((current) =>
+                    current?.id === session.id &&
+                    current?.refreshToken === session.refreshToken
+                      ? null
+                      : current,
+                  );
                   if (active.current) {
-                    setSession((current) =>
-                      current?.id === session.id ? null : current,
-                    );
                     setRemote([]);
                     setMsg("Signed out locally.");
                   }
