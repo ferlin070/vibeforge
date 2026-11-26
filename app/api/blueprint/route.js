@@ -20,6 +20,7 @@ import {
   parseOutput,
 } from "../../../lib/ai-adapters.mjs";
 import { customRequest } from "../../../lib/custom-endpoint.mjs";
+import { geminiUsage } from "../../../lib/model-control.mjs";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 export async function POST(req) {
@@ -154,6 +155,7 @@ export async function POST(req) {
       );
     }
     const result = { blueprint, provider, model };
+    if (provider === "gemini") result.usage = geminiUsage(envelope.usageMetadata);
     if (
       output.includes(key) ||
       JSON.stringify(result).includes(JSON.stringify(key).slice(1, -1))
