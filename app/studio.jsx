@@ -95,7 +95,9 @@ export default function Studio({
     }
     if (
       !session &&
-      (managed || currentProvider.custom || process.env.NODE_ENV !== "development")
+      (managed ||
+        currentProvider.custom ||
+        process.env.NODE_ENV !== "development")
     ) {
       setMsg(
         "Sign in via Cloud account to generate with AI on hosted deployments. Manual blueprint mode remains available.",
@@ -329,7 +331,9 @@ export default function Studio({
               }
               onClick={() => {
                 setProvider(x.id);
-                setModel(["openai", "gemini", "rootsys"].includes(x.id) ? x.example : "");
+                setModel(
+                  ["openai", "gemini", "rootsys"].includes(x.id) ? x.example : "",
+                );
                 setKey("");
                 setBaseURL("");
                 setMsg("");
@@ -412,19 +416,21 @@ export default function Studio({
         )}
         <div className="twocol">
           {managed ? (
-            <p>Private pilot. Server key only; owner approval and login required.</p>
+            <p>
+              Private pilot. Server key only; owner approval and login required.
+            </p>
           ) : (
-          <label>
-            {currentProvider.label} API key
-            <input
-              type="password"
-              autoComplete="off"
-              value={key}
-              onChange={(e) => setKey(e.target.value)}
-              placeholder={currentProvider.keyHint}
-              disabled={busy}
-            />
-          </label>
+            <label>
+              {currentProvider.label} API key
+              <input
+                type="password"
+                autoComplete="off"
+                value={key}
+                onChange={(e) => setKey(e.target.value)}
+                placeholder={currentProvider.keyHint}
+                disabled={busy}
+              />
+            </label>
           )}
           <label>
             Model ID
@@ -447,7 +453,11 @@ export default function Studio({
               ? "Model ID format accepted"
               : "Model ID required"}
             {" · "}
-            {managed ? "Server-managed pilot" : key.trim() ? "Key entered (memory only)" : "Key not entered"}
+            {managed
+              ? "Server-managed pilot"
+              : key.trim()
+                ? "Key entered (memory only)"
+                : "Key not entered"}
           </p>
           <details>
             <summary>Preview exact project context sent to provider</summary>
