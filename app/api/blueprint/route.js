@@ -22,6 +22,7 @@ import {
 import { customRequest } from "../../../lib/custom-endpoint.mjs";
 import { geminiUsage } from "../../../lib/model-control.mjs";
 import { rootsysBlueprintPrompt } from "../../../lib/rootsys-prompt.mjs";
+import { rootsysRoutePlan } from "../../../lib/rootsys-router.mjs";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 export async function POST(req) {
@@ -97,12 +98,14 @@ export async function POST(req) {
       sections.map((x) => x[0]).join(", ") +
       "; each value detailed Markdown), assumptions (string array), questions (string array), tasks (1–40 objects each with id TASK-001 format, title, description, dependencies array of existing task IDs, acceptance array of measurable criteria). No dependency cycles. Include stable FR/NFR IDs and trace them in task descriptions and tests. Cover screen states, API contracts, database design, permissions, security, tests and deployment. Do not invent research or test results; mark unknowns and decisions requiring approval. Use concrete project-specific details, not generic placeholders. Each requirement ID must appear in at least one task description or acceptance criterion. For each task, write concrete Given/When/Then or equivalent acceptance criteria with a visible expected result, negative case where relevant, and measurable limit or status when appropriate. A requirement ID alone or words like must/test/verify are not evidence. Reference only IDs defined in PRD/SRS. Specify test data, execution steps and expected outcomes; document environment configuration, rollback triggers and recovery verification. Avoid claiming unrun tests passed. Keep scope and output concise enough to complete within token limits.";
     const prompt = managed ? rootsysBlueprintPrompt() : standardPrompt;
+    const routing = managed ? rootsysRoutePlan(data) : null;
+    const selectedModel = routing?.model || model;
     const custom = body.custom || {};
     let spec;
     try {
       spec = makeRequest(
         provider,
-        model,
+        selectedModel,
         key,
         prompt,
         JSON.stringify(data),
@@ -172,7 +175,8 @@ export async function POST(req) {
         422,
       );
     }
-    const result = { blueprint, provider, model };
+    const result = { blueprint, provider, model: selectedModel };
+    if (routing) result.routing = routing;
     if (provider === "gemini")
       result.usage = geminiUsage(envelope.usageMetadata);
     if (
