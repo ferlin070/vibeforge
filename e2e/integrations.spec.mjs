@@ -209,9 +209,7 @@ test("mocked AI failure and candidate review preserve existing work until apply"
   await expect(page.getByText("Estimated cost: Unavailable")).toBeVisible();
   await page.getByLabel("Input price (USD per million tokens)").fill("1");
   await page.getByLabel("Output price (USD per million tokens)").fill("2");
-  await expect(
-    page.getByText("Estimated cost: USD 0.00250000"),
-  ).toBeVisible();
+  await expect(page.getByText("Estimated cost: USD 0.00250000")).toBeVisible();
   expect((await stored(page))[0].blueprint).toEqual(approved.blueprint);
   expect((await stored(page))[0].blueprintApproved).toBe(true);
   accept(page);
