@@ -4,7 +4,7 @@ import {
   deleteSnapshotSafely,
   snapshotDraft,
 } from "../lib/workspace.mjs";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { validateSnapshot } from "../lib/project-schema.mjs";
 import {
   cloudConfigured,
@@ -34,6 +34,13 @@ export default function Cloud({
     [remote, setRemote] = useState([]),
     [remoteOwner, setRemoteOwner] = useState(""),
     [newPassword, setNewPassword] = useState("");
+  const active = useRef(false);
+  useEffect(() => {
+    active.current = true;
+    return () => {
+      active.current = false;
+    };
+  }, []);
   const configured = cloudConfigured;
   const request = cloudRequest;
   const auth = async (signup) => {
@@ -46,6 +53,7 @@ export default function Cloud({
           : "/auth/v1/token?grant_type=password",
         { method: "POST", body: JSON.stringify({ email, password }) },
       );
+      if (!active.current) return;
       if (d.access_token && d.user?.id) {
         setSession(sessionFrom(d));
         setMsg("Signed in. Cloud snapshots require explicit save/load.");
@@ -83,6 +91,7 @@ export default function Cloud({
           return false;
         }
       });
+      if (!active.current) return;
       setRemote(valid);
       setRemoteOwner(session.id);
       setMsg(
@@ -104,6 +113,7 @@ export default function Cloud({
             "\nRecognized secret patterns will be redacted in the cloud copy. Local text is unchanged. If the cloud version changes during this operation, the save is rejected.",
         ),
       );
+      if (!active.current) return;
       if (result.status === "cancelled") {
         setMsg("Save cancelled. Existing snapshot retained.");
         return;
@@ -162,6 +172,7 @@ export default function Cloud({
               if (!busy)
                 run(async () => {
                   await resetRecoveredPassword(recoveryToken, newPassword);
+                  if (!active.current) return;
                   setNewPassword("");
                   clearRecovery();
                   setSession(null);
@@ -381,9 +392,13 @@ export default function Cloud({
                     session.token,
                   );
                 } finally {
-                  setSession(null);
-                  setRemote([]);
-                  setMsg("Signed out locally.");
+                  if (active.current) {
+                    setSession((current) =>
+                      current?.id === session.id ? null : current,
+                    );
+                    setRemote([]);
+                    setMsg("Signed out locally.");
+                  }
                 }
               })
             }
