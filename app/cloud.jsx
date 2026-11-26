@@ -384,9 +384,7 @@ export default function Cloud({
           <button
             className="ghost"
             disabled={busy}
-            onClick={() =>
-              onSignOut(session)
-            }
+            onClick={() => onSignOut(session)}
           >
             Sign out
           </button>
