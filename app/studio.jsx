@@ -8,6 +8,7 @@ import {
 } from "../lib/redact.mjs";
 import { useState, useEffect } from "react";
 import Architect from "./architect.jsx";
+import RootsysStatus from "./rootsys-status.jsx";
 import {
   generationContext,
   generationSummary,
@@ -332,7 +333,9 @@ export default function Studio({
               onClick={() => {
                 setProvider(x.id);
                 setModel(
-                  ["openai", "gemini", "rootsys"].includes(x.id) ? x.example : "",
+                  ["openai", "gemini", "rootsys"].includes(x.id)
+                    ? x.example
+                    : "",
                 );
                 setKey("");
                 setBaseURL("");
@@ -442,6 +445,9 @@ export default function Studio({
             />
           </label>
         </div>
+        {managed && session && (
+          <RootsysStatus key={session.id} session={session} />
+        )}
         <section className="summary" aria-label="AI model control center">
           <h3>AI Model Control Center</h3>
           <p>
