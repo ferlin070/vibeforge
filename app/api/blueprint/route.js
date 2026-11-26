@@ -155,7 +155,8 @@ export async function POST(req) {
       );
     }
     const result = { blueprint, provider, model };
-    if (provider === "gemini") result.usage = geminiUsage(envelope.usageMetadata);
+    if (provider === "gemini")
+      result.usage = geminiUsage(envelope.usageMetadata);
     if (
       output.includes(key) ||
       JSON.stringify(result).includes(JSON.stringify(key).slice(1, -1))
