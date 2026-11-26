@@ -1,7 +1,4 @@
-import {
-  guard,
-  RequestError,
-} from "../../../../lib/request-guard.mjs";
+import { guard, RequestError } from "../../../../lib/request-guard.mjs";
 import { inspectRootsys } from "../../../../lib/rootsys-status.mjs";
 
 export const runtime = "nodejs";
