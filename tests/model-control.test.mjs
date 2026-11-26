@@ -5,6 +5,7 @@ import {
   generationSummary,
   geminiUsage,
   estimateGeminiCost,
+  generationRecord,
 } from "../lib/model-control.mjs";
 
 const project = {
@@ -85,4 +86,25 @@ test("Gemini cost uses explicit rates and reconciled usage", () => {
   partial.totalTokenCount = 1400;
   assert.equal(estimateGeminiCost(partial, "1", "2"), 0.0023);
   assert.equal(estimateGeminiCost(null, "1", "2"), null);
+});
+
+test("Generation history records only bounded metadata", () => {
+  const entry = generationRecord(
+    "gemini",
+    "gemini-2.5-flash",
+    "success",
+    1000,
+    2000,
+    { totalTokenCount: 15, secret: "synthetic-secret" },
+  );
+  assert.equal(entry.status, "Candidate ready");
+  assert.equal(entry.elapsedMs, 1000);
+  assert.deepEqual(entry.usage, { totalTokenCount: 15 });
+  assert.equal(entry.model, "gemini-2.5-flash");
+  assert.doesNotMatch(JSON.stringify(entry), /synthetic-secret/);
+  const failed = generationRecord("gemini", "private-id", "failure", 2, 1);
+  assert.equal(failed.model, "Other model");
+  assert.equal(failed.status, "Failed");
+  assert.equal(failed.elapsedMs, 0);
+  assert.equal(failed.usage, null);
 });
