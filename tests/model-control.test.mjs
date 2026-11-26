@@ -4,6 +4,7 @@ import {
   generationContext,
   generationSummary,
   geminiUsage,
+  estimateGeminiCost,
 } from "../lib/model-control.mjs";
 
 const project = {
@@ -63,4 +64,25 @@ test("Gemini usage filters provider metadata", () => {
   assert.equal(geminiUsage({ totalTokenCount: "123" }), null);
   assert.equal(geminiUsage({ totalTokenCount: Infinity }), null);
   assert.equal(geminiUsage(undefined), null);
+});
+
+test("Gemini cost uses explicit rates and reconciled usage", () => {
+  const usage = {
+    promptTokenCount: 500,
+    candidatesTokenCount: 900,
+    thoughtsTokenCount: 100,
+    totalTokenCount: 1500,
+  };
+  assert.equal(estimateGeminiCost(usage, "1", "2"), 0.0025);
+  assert.equal(estimateGeminiCost(usage, "0", "0"), 0);
+  for (const rate of ["", "-1", "Infinity", "1e2", " 1"]) {
+    assert.equal(estimateGeminiCost(usage, rate, "2"), null);
+    assert.equal(estimateGeminiCost(usage, "1", rate), null);
+  }
+  const { thoughtsTokenCount, ...partial } = usage;
+  assert.equal(thoughtsTokenCount, 100);
+  assert.equal(estimateGeminiCost(partial, "1", "2"), null);
+  partial.totalTokenCount = 1400;
+  assert.equal(estimateGeminiCost(partial, "1", "2"), 0.0023);
+  assert.equal(estimateGeminiCost(null, "1", "2"), null);
 });
