@@ -84,7 +84,10 @@ test("owner allocation is bounded and rejects invalid configuration", () => {
     assert.equal(allocation.dailyAttempts * 8000, Number(value));
   }
   for (const value of ["", "-1", "9000", "40001", "NaN", "4e4"]) {
-    assert.equal(rootsysAllocation({ ROOTSYS_DAILY_OUTPUT_BUDGET: value }), null);
+    assert.equal(
+      rootsysAllocation({ ROOTSYS_DAILY_OUTPUT_BUDGET: value }),
+      null,
+    );
   }
 });
 
@@ -101,7 +104,10 @@ test("generation allocation is enforced before provider access", async () => {
   };
   await guard(request(), "rootsys", { env: active, fetcher });
   assert.equal(calls.length, 2);
-  for (const [value, status] of [["0", 429], ["9000", 503]]) {
+  for (const [value, status] of [
+    ["0", 429],
+    ["9000", 503],
+  ]) {
     calls.length = 0;
     await assert.rejects(
       guard(request(), "rootsys", {
