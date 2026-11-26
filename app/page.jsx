@@ -1121,6 +1121,7 @@ export default function Home() {
           )}
           {view === "cloud" && (
             <Cloud
+              key={session?.id || "signed-out"}
               projects={projects}
               selected={selected}
               setSelected={setSelected}
