@@ -81,3 +81,7 @@ Mission Control offers an explicit, view-local AI planning request for an assign
 ### Reviewed advisory export
 
 After reviewing a Rootsys task plan, the operator may explicitly confirm review for sharing and export a separate `TASK-NNN-rootsys-advisory.json` file. This contains bounded task context, validated suggestions and explicit untrusted-data instructions. It is not a signed approval, implementation evidence, or executable job. The existing manual mission handoff remains authoritative. Export does not modify the project, assignment, evidence or handoff state, and does not call the provider. A new generation resets the local review checkbox; changing task, assignment or account remounts the planner.
+
+### Multi-agent coordination
+
+Mission Control derives a read-only coordination queue from the existing validated blueprint and mission state. It prioritizes evidence review, assigned tasks, ready tasks and handoff follow-up, then the number of unfinished direct dependents within each group. Blocked tasks expose unreviewed dependency IDs. Selection only opens a task for manual action; it never assigns, dispatches, runs or approves tasks. The queue is recomputed from current local project state and makes no additional provider calls. This is coordination assistance, not autonomous multi-agent execution or a durable job queue.
