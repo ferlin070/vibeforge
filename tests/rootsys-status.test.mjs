@@ -4,7 +4,7 @@ import { inspectRootsys, normalizeQuota } from "../lib/rootsys-status.mjs";
 import { guard } from "../lib/request-guard.mjs";
 
 test("quota parsing does not invent missing token counts", () => {
-  assert.deepEqual(normalizeQuota({ remaining: 0, used: -1 }), {
+  assert.deepEqual(normalizeQuota({ tokens_remaining: 0, tokens_used: -1 }), {
     remaining: 0,
     total: null,
     used: null,
@@ -50,4 +50,16 @@ test("inspection is disabled in production and without activation", async () => 
       (error) => error.status === 503,
     );
   }
+});
+
+test("ambiguous quota units and timezone-free expiry stay unknown", () => {
+  assert.deepEqual(
+    normalizeQuota({
+      remaining: 100,
+      total: 200,
+      used: 100,
+      expires_at: "2026-12-01T00:00:00",
+    }),
+    { remaining: null, total: null, used: null, expiresAt: null },
+  );
 });
