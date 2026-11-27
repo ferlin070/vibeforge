@@ -14,12 +14,12 @@ This runbook is for the protected VibeForge Preview branch `beta/rc12-hardening`
 
 In Vercel project Settings > Environment Variables, target Preview **only**, Git branch `beta/rc12-hardening`. Do not use Development, Production or a public variable prefix.
 
-| Variable | Initial value |
-| --- | --- |
-| ROOTSYS_API_KEY | Owner enters directly in Vercel as a sensitive server secret |
-| ROOTSYS_OWNER_ID | Exact UUID of the owner's existing Supabase Auth user |
-| ROOTSYS_ENABLED | false |
-| ROOTSYS_DAILY_OUTPUT_BUDGET | 0 |
+| Variable                    | Initial value                                                |
+| --------------------------- | ------------------------------------------------------------ |
+| ROOTSYS_API_KEY             | Owner enters directly in Vercel as a sensitive server secret |
+| ROOTSYS_OWNER_ID            | Exact UUID of the owner's existing Supabase Auth user        |
+| ROOTSYS_ENABLED             | false                                                        |
+| ROOTSYS_DAILY_OUTPUT_BUDGET | 0                                                            |
 
 Do not paste keys, passwords, tokens or recovery links into chat or source control. Confirm the account UUID in the dedicated Supabase Auth dashboard; never substitute an email or guess. Keep deployment protection enabled. Redeploy the reviewed commit to the intended branch with the new environment and record its ID.
 
