@@ -38,3 +38,7 @@ Only after owner approval of a real call, set ROOTSYS_DAILY_OUTPUT_BUDGET to 800
 Set ROOTSYS_ENABLED=false and ROOTSYS_DAILY_OUTPUT_BUDGET=0 for future deployments. Existing immutable deployments may retain earlier environment values. Identify all enabled Preview deployments; remove access or retire them with owner approval and revoke the pilot key at its issuer if necessary. Already-started calls may finish. Do not rely on redeploy alone to disable older deployment URLs. Review logs without recording secrets. Preserve the existing production deployment and database.
 
 Public launch requires separately approved commercial terms, privacy and retention policy, hard budget and multi-user isolation design, real browser Auth and RLS tests, model quality evaluation, support and rollback plan. The pilot is not a commercial release.
+
+## Additional preflight hardening
+
+The first full CI after coordination changes (#508) passed 209 unit tests, build, lint, formatting and dependency audit, but one browser test matched duplicate task rows across two panels. The regression now targets named regions and checks coordination selection as well as the original ready status. Quota parsing recognizes explicit token-named fields only; generic counts and timezone-free expiry stay unknown. Managed guard regression tests cover missing Redis and failed or invalid Redis responses. These changes require exact-head CI verification before pilot activation.
