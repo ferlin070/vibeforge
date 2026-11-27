@@ -1,5 +1,7 @@
 "use client";
 import { useState } from "react";
+import RootsysTask from "./rootsys-task.jsx";
+import { taskPlanContext } from "../lib/rootsys-task.mjs";
 import { agents } from "../lib/context.mjs";
 import { localHandoffFiles } from "../lib/local-handoff.mjs";
 import { reviewLocalReceipt } from "../lib/local-runner.mjs";
@@ -21,6 +23,7 @@ export default function Mission({
   update,
   newProject,
   openStudio,
+  session,
 }) {
   const [filter, setFilter] = useState("All"),
     [taskId, setTaskId] = useState(""),
@@ -59,6 +62,14 @@ export default function Mission({
   const actionable =
     t && ["Ready", "Assigned", "Handed off"].includes(t.status);
   const currentReport = p.evidence?.[t?.id]?.report;
+  let aiContext = null;
+  if (session && t?.status === "Assigned") {
+    try {
+      aiContext = taskPlanContext(p, t.id);
+    } catch {
+      // Oversized or invalid tasks remain available for manual handoff.
+    }
+  }
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(missionPrompt(p, t.id));
@@ -289,6 +300,13 @@ export default function Mission({
           >
             Save assignment
           </button>
+          {aiContext && (
+            <RootsysTask
+              key={JSON.stringify([session.id, t.assignment, aiContext])}
+              context={aiContext}
+              session={session}
+            />
+          )}
           <button
             className="ghost"
             disabled={!actionable || !t.assignment}
