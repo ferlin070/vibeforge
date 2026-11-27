@@ -119,3 +119,45 @@ test("generation allocation is enforced before provider access", async () => {
     assert.equal(calls.length, 1);
   }
 });
+
+test("all managed scopes fail closed if distributed limiter fails", async () => {
+  const active = { ...env, ROOTSYS_ENABLED: "true" };
+  for (const scope of ["rootsys", "rootsys-admin", "rootsys-inspect"]) {
+    for (const failure of [
+      () => {
+        throw Error("Redis unavailable");
+      },
+      () => new Response("", { status: 503 }),
+      () => Response.json({ result: 2 }),
+    ]) {
+      await assert.rejects(
+        guard(request(), scope, {
+          env: active,
+          fetcher: async (url) => {
+            if (url === "https://fixture.supabase.co/auth/v1/user")
+              return Response.json({ id: "fixture-owner" });
+            assert.equal(url, "https://redis.example/");
+            return failure();
+          },
+        }),
+        (error) => error.status === 503,
+      );
+    }
+    await assert.rejects(
+      guard(request(), scope, {
+        env: {
+          ...active,
+          UPSTASH_REDIS_REST_URL: "",
+          UPSTASH_REDIS_REST_TOKEN: "",
+          KV_REST_API_URL: "",
+          KV_REST_API_TOKEN: "",
+        },
+        fetcher: async (url) => {
+          assert.equal(url, "https://fixture.supabase.co/auth/v1/user");
+          return Response.json({ id: "fixture-owner" });
+        },
+      }),
+      (error) => error.status === 503,
+    );
+  }
+});
