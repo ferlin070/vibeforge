@@ -1,10 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  validateTaskPlan,
-  reviewedTaskPlan,
-} from "../lib/rootsys-task.mjs";
+import { validateTaskPlan, reviewedTaskPlan } from "../lib/rootsys-task.mjs";
 
 export default function RootsysTask({ context, session }) {
   const [plan, setPlan] = useState(null);
