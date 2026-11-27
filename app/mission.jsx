@@ -193,13 +193,16 @@ export default function Mission({
         <h2>Multi-agent coordination</h2>
         <p>Suggested next actions. No automatic dispatch or execution.</p>
         <p>
-          {queue.actionable.length} actionable · {queue.blocked.length} blocked ·{" "}
-          {queue.awaitingApproval} awaiting approval · {queue.reviewed} reviewed
+          {queue.actionable.length} actionable · {queue.blocked.length} blocked
+          · {queue.awaitingApproval} awaiting approval · {queue.reviewed}{" "}
+          reviewed
         </p>
         {queue.actionable.map((item) => (
           <article className="taskrow" key={item.id}>
             <div>
-              <small>{item.id} · {item.role}</small>
+              <small>
+                {item.id} · {item.role}
+              </small>
               <h3>{item.title}</h3>
               <p>{item.nextAction}</p>
               <small>{item.dependentCount} unfinished direct dependents</small>
