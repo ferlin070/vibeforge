@@ -1028,7 +1028,7 @@ export default function Home() {
           {view === "studio" && (
             <Studio
               session={session}
-              key={p?.id || "none"}
+              key={JSON.stringify([p?.id || "none", session?.id || null])}
               project={p}
               projects={projects}
               selected={selected}
@@ -1073,7 +1073,7 @@ export default function Home() {
           {view === "mission" && (
             <Mission
               session={session}
-              key={p?.id || "none"}
+              key={JSON.stringify([p?.id || "none", session?.id || null])}
               project={p}
               projects={projects}
               selected={selected}
