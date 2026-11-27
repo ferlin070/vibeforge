@@ -1072,6 +1072,7 @@ export default function Home() {
           )}
           {view === "mission" && (
             <Mission
+              session={session}
               key={p?.id || "none"}
               project={p}
               projects={projects}
