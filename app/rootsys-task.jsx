@@ -1,18 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import { validateTaskPlan } from "../lib/rootsys-task.mjs";
+import {
+  validateTaskPlan,
+  reviewedTaskPlan,
+} from "../lib/rootsys-task.mjs";
 
 export default function RootsysTask({ context, session }) {
   const [plan, setPlan] = useState(null);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [reviewed, setReviewed] = useState(false);
 
   async function generate() {
     if (busy) return;
-    if (!confirm("Send this task to Rootsys? Provider charges may apply.")) return;
+    if (!confirm("Send this task to Rootsys? Provider charges may apply."))
+      return;
     setBusy(true);
     setPlan(null);
+    setReviewed(false);
     setMessage("");
     try {
       const response = await fetch("/api/rootsys/task", {
@@ -31,6 +37,24 @@ export default function RootsysTask({ context, session }) {
       setMessage(error.message || "Task plan unavailable.");
     } finally {
       setBusy(false);
+    }
+  }
+
+  function exportPlan() {
+    try {
+      const artifact = reviewedTaskPlan(context, plan, reviewed);
+      const blob = new Blob([JSON.stringify(artifact, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = context.id + "-rootsys-advisory.json";
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setMessage("Advisory export requested. No handoff recorded.");
+    } catch (error) {
+      setMessage(error.message);
     }
   }
 
@@ -59,7 +83,26 @@ export default function RootsysTask({ context, session }) {
               </ul>
             </div>
           ))}
-          <small>No execution, handoff or evidence was recorded.</small>
+          <label>
+            <input
+              type="checkbox"
+              checked={reviewed}
+              onChange={(event) => setReviewed(event.target.checked)}
+            />{" "}
+            I reviewed these suggestions for sharing, not as test evidence.
+          </label>
+          <button
+            type="button"
+            className="ghost"
+            disabled={!reviewed || busy}
+            onClick={exportPlan}
+          >
+            Export reviewed advisory plan
+          </button>
+          <small>
+            Use with the approved manual handoff. No execution, handoff or
+            evidence was recorded.
+          </small>
         </div>
       )}
     </section>
