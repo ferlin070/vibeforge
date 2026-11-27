@@ -225,7 +225,7 @@ export default function Mission({
           </details>
         )}
       </section>
-      <section className="panel studioPanel">
+      <section className="panel studioPanel" aria-label="Mission queue">
         <div className="sectionhead">
           <h2>Mission queue</h2>
           <label className="missionfilter">
