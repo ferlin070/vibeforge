@@ -8,6 +8,16 @@ import {
 } from "../lib/redact.mjs";
 import { useState, useEffect } from "react";
 import Architect from "./architect.jsx";
+import RootsysStatus from "./rootsys-status.jsx";
+import { ROOTSYS_PROMPT_VERSION } from "../lib/rootsys-prompt.mjs";
+import { rootsysRoutePlan } from "../lib/rootsys-router.mjs";
+import {
+  generationContext,
+  generationSummary,
+  geminiUsage,
+  estimateGeminiCost,
+  generationRecord,
+} from "../lib/model-control.mjs";
 import { scoreBlueprint } from "../lib/blueprint-quality.mjs";
 import {
   sections,
@@ -31,8 +41,8 @@ export default function Studio({
   onDirtyChange,
 }) {
   const [key, setKey] = useState(""),
-    [model, setModel] = useState("gpt-4.1-mini"),
-    [provider, setProvider] = useState("openai"),
+    [model, setModel] = useState(providerById("gemini").example),
+    [provider, setProvider] = useState("gemini"),
     [baseURL, setBaseURL] = useState(""),
     [format, setFormat] = useState("chat"),
     [auth, setAuth] = useState("key"),
@@ -44,7 +54,10 @@ export default function Studio({
     [reading, setReading] = useState(false),
     [taskId, setTaskId] = useState(""),
     [report, setReport] = useState(""),
-    [candidate, setCandidate] = useState(null);
+    [candidate, setCandidate] = useState(null),
+    [history, setHistory] = useState(null);
+  const historyOwner = session?.id || null;
+  const records = history?.owner === historyOwner ? history.records : [];
   const dirty =
     !!candidate ||
     (!!report.trim() &&
@@ -65,6 +78,10 @@ export default function Studio({
       </section>
     );
   const currentProvider = providerById(provider);
+  const managed = currentProvider.managed === true;
+  const usage = candidate?.usage;
+  const modelSummary = generationSummary(provider, model, p, includeRepo);
+  const routing = managed ? rootsysRoutePlan(modelSummary.context) : null;
   const b = p.blueprint,
     evidence = p.evidence || {},
     t = b?.tasks.find((x) => x.id === taskId) || b?.tasks[0];
@@ -76,13 +93,15 @@ export default function Studio({
   };
   const generate = async () => {
     if (busy) return;
-    if (!key.trim()) {
+    if (!managed && !key.trim()) {
       setMsg("Enter your selected provider API key.");
       return;
     }
     if (
       !session &&
-      (currentProvider.custom || process.env.NODE_ENV !== "development")
+      (managed ||
+        currentProvider.custom ||
+        process.env.NODE_ENV !== "development")
     ) {
       setMsg(
         "Sign in via Cloud account to generate with AI on hosted deployments. Manual blueprint mode remains available.",
@@ -98,35 +117,47 @@ export default function Studio({
     )
       return;
     if (
-      b &&
       !confirm(
-        "Generate a candidate blueprint? Provider charges may apply. Existing work is unchanged until you confirm the impact.",
+        "Generate a candidate with " +
+          currentProvider.label +
+          " / " +
+          model +
+          "? Provider charges may apply. Existing work is unchanged until you confirm the impact.",
       )
     )
       return;
     setBusy(true);
     setCandidate(null);
     setMsg("Generating validated documents and tasks...");
+    const started = Date.now();
+    const record = (status, usage) => {
+      const entry = generationRecord(
+        provider,
+        model,
+        status,
+        started,
+        Date.now(),
+        usage,
+      );
+      setHistory((previous) => ({
+        owner: historyOwner,
+        records: [
+          entry,
+          ...(previous?.owner === historyOwner ? previous.records : []),
+        ].slice(0, 20),
+      }));
+    };
     try {
       const res = await fetch("/api/blueprint", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           ...(session?.token ? { "x-vibeforge-session": session.token } : {}),
-          "x-provider-key": key.trim(),
+          ...(!managed ? { "x-provider-key": key.trim() } : {}),
         },
         signal: AbortSignal.timeout(65000),
         body: JSON.stringify({
-          project: redactData({
-            name: p.name,
-            type: p.type,
-            idea: p.idea,
-            audience: p.audience,
-            agent: p.agent,
-            repositoryContext: includeRepo
-              ? JSON.stringify(p.repository || {}).slice(0, 8000)
-              : "",
-          }),
+          project: generationContext(p, includeRepo),
           model,
           provider,
           custom: { baseURL, format, auth, jsonMode },
@@ -139,11 +170,14 @@ export default function Studio({
         blueprint,
         source: "AI-generated draft · " + currentProvider.label + " / " + model,
         base: p,
+        usage: provider === "gemini" ? geminiUsage(data.usage) : null,
       });
+      record("success", data.usage);
       setMsg(
         "Candidate generated. Review its quality and apply explicitly. Existing work is unchanged.",
       );
     } catch (e) {
+      record("failure", null);
       setMsg(
         (e.name === "TimeoutError" || e.name === "AbortError"
           ? "Request timed out."
@@ -301,7 +335,11 @@ export default function Studio({
               }
               onClick={() => {
                 setProvider(x.id);
-                setModel(x.id === "openai" ? x.example : "");
+                setModel(
+                  ["openai", "gemini", "rootsys"].includes(x.id)
+                    ? x.example
+                    : "",
+                );
                 setKey("");
                 setBaseURL("");
                 setMsg("");
@@ -383,31 +421,77 @@ export default function Studio({
           </label>
         )}
         <div className="twocol">
-          <label>
-            {currentProvider.label} API key
-            <input
-              type="password"
-              autoComplete="off"
-              value={key}
-              onChange={(e) => setKey(e.target.value)}
-              placeholder={currentProvider.keyHint}
-              disabled={busy}
-            />
-          </label>
+          {managed ? (
+            <p>
+              Private pilot. Server key only; owner approval and login required.
+            </p>
+          ) : (
+            <label>
+              {currentProvider.label} API key
+              <input
+                type="password"
+                autoComplete="off"
+                value={key}
+                onChange={(e) => setKey(e.target.value)}
+                placeholder={currentProvider.keyHint}
+                disabled={busy}
+              />
+            </label>
+          )}
           <label>
             Model ID
             <input
               placeholder={currentProvider.example}
               value={model}
               onChange={(e) => setModel(e.target.value)}
-              disabled={busy}
+              disabled={busy || managed}
             />
           </label>
         </div>
+        {managed && session && (
+          <RootsysStatus key={session.id} session={session} />
+        )}
+        <section className="summary" aria-label="AI model control center">
+          <h3>AI Model Control Center</h3>
+          <p>
+            {modelSummary.provider} · {modelSummary.model || "Select model"}
+          </p>
+          <p>
+            Configuration:{" "}
+            {modelSummary.valid
+              ? "Model ID format accepted"
+              : "Model ID required"}
+            {" · "}
+            {managed
+              ? "Server-managed pilot"
+              : key.trim()
+                ? "Key entered (memory only)"
+                : "Key not entered"}
+          </p>
+          <details>
+            <summary>Preview exact project context sent to provider</summary>
+            <pre>{JSON.stringify(modelSummary.context, null, 2)}</pre>
+          </details>
+          {managed && <p>Prompt profile: {ROOTSYS_PROMPT_VERSION}</p>}
+          {routing && (
+            <div>
+              <p>Routing policy: {routing.policy}</p>
+              <p>Context class: {routing.contextClass}</p>
+              <p>Selected model: {routing.model}</p>
+              <p>Requested output limit: {routing.outputLimit}</p>
+              <p>{routing.reason}</p>
+              {routing.evaluationCandidate && (
+                <p>Evaluation only: {routing.evaluationCandidate}</p>
+              )}
+              <small>No automatic model switching or fallback.</small>
+            </div>
+          )}
+          <small>{modelSummary.notice}</small>
+        </section>
         <button
           disabled={
             busy ||
-            !key.trim() ||
+            (!managed && !key.trim()) ||
             !validModel(provider, model) ||
             (currentProvider.custom && !baseURL.trim())
           }
@@ -434,11 +518,40 @@ export default function Studio({
           {msg}
         </p>
       </section>
+      <section className="panel" aria-label="AI execution history">
+        <h2>AI Execution History</h2>
+        <p>Last 20 attempts in this Studio view. Not saved or synced.</p>
+        {records.length === 0 && <p>No generation attempts yet.</p>}
+        {records.map((entry, index) => (
+          <div className="summary" key={index}>
+            <strong>{entry.status}</strong>
+            <p>
+              {entry.provider} · {entry.model} · {entry.elapsedMs} ms
+            </p>
+            <small>{entry.at}</small>
+            <p>Total tokens: {entry.usage?.totalTokenCount ?? "Unknown"}</p>
+          </div>
+        ))}
+        <small>
+          Failed attempts may still incur charges. No billing record.
+        </small>
+      </section>
       <Architect key={p.id} project={p} />
       {candidate && (
         <section className="panel studioPanel">
           <h2>Generated candidate — not applied</h2>
           <BlueprintScore blueprint={candidate.blueprint} />
+          {usage && (
+            <section className="summary" aria-label="Gemini token usage">
+              <h3>Gemini token usage</h3>
+              <p>Input tokens: {usage.promptTokenCount ?? "Unknown"}</p>
+              <p>Output tokens: {usage.candidatesTokenCount ?? "Unknown"}</p>
+              <p>Thinking tokens: {usage.thoughtsTokenCount ?? "Unknown"}</p>
+              <p>Total tokens: {usage.totalTokenCount ?? "Unknown"}</p>
+              <small>Provider-reported usage, not a billing estimate.</small>
+              <GeminiCost usage={usage} />
+            </section>
+          )}
           <p>
             {candidate.blueprint.tasks.length} tasks ·{" "}
             {candidate.blueprint.questions.length} open questions
@@ -838,5 +951,46 @@ function DocumentReader({ text }) {
         );
       })}
     </article>
+  );
+}
+
+function GeminiCost({ usage }) {
+  const [inputRate, setInputRate] = useState("");
+  const [outputRate, setOutputRate] = useState("");
+  const estimate = estimateGeminiCost(usage, inputRate, outputRate);
+  const costText =
+    estimate === null ? "Unavailable" : "USD " + estimate.toFixed(8);
+  return (
+    <div>
+      <h3>AI Cost Calculator</h3>
+      <p>Enter your own flat USD rates per million tokens for this model.</p>
+      <div className="twocol">
+        <label>
+          Input price (USD per million tokens)
+          <input
+            inputMode="decimal"
+            value={inputRate}
+            maxLength={13}
+            onChange={(event) => setInputRate(event.target.value)}
+          />
+        </label>
+        <label>
+          Output price (USD per million tokens)
+          <input
+            inputMode="decimal"
+            value={outputRate}
+            maxLength={13}
+            onChange={(event) => setOutputRate(event.target.value)}
+          />
+        </label>
+      </div>
+      <p aria-live="polite">Estimated cost: {costText}</p>
+      <small>
+        Flat-rate scenario only. Thinking tokens use the output rate. Missing or
+        inconsistent counts prevent an estimate. Excludes caching discounts,
+        tiers, taxes and other fees. Not a bill or spending limit. Rates and
+        estimates are not saved.
+      </small>
+    </div>
   );
 }

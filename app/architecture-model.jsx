@@ -5,14 +5,18 @@ import {
   addEndpoint,
   addEntity,
   addRelation,
+  clearArchitectureDraft,
   emptyArchitecture,
   exportArchitecture,
   httpMethods,
+  loadArchitectureDraft,
+  parseArchitecture,
   relationKinds,
   removeEntity,
+  saveArchitectureDraft,
 } from "../lib/architecture-model.mjs";
 
-export default function ArchitectureModel() {
+export default function ArchitectureModel({ projectId }) {
   const [model, setModel] = useState(emptyArchitecture);
   const [entity, setEntity] = useState("");
   const [fields, setFields] = useState("");
@@ -24,6 +28,7 @@ export default function ArchitectureModel() {
   const [access, setAccess] = useState("Authenticated");
   const [purpose, setPurpose] = useState("");
   const [message, setMessage] = useState("");
+  const [importText, setImportText] = useState("");
   const change = (operation, success) => {
     try {
       setModel(operation());
@@ -53,10 +58,104 @@ export default function ArchitectureModel() {
       <div className="eyebrow">RC9 · DESIGN DRAFT</div>
       <h2>Visual Architecture Studio</h2>
       <p>
-        Model proposed entities, relationships and API contracts. This draft is
-        temporary, not an approved blueprint or a database migration. Export
-        before leaving this view.
+        Model proposed entities, relationships and API contracts. Save or export
+        before leaving this view. This is not an approved blueprint or a
+        database migration.
       </p>
+      <div className="summary">
+        <h3>Draft storage</h3>
+        <p>
+          Saved drafts stay in this browser for this project. They are not
+          included in cloud snapshots and are not cleared on sign-out. Export a
+          copy for backup. Do not store confidential material on shared devices.
+        </p>
+        <button
+          className="ghost"
+          onClick={() => {
+            try {
+              const saved = saveArchitectureDraft(
+                localStorage,
+                projectId,
+                model,
+                () => confirm("Replace the saved architecture draft?"),
+              );
+              setMessage(
+                saved ? "Architecture draft saved." : "Save cancelled.",
+              );
+            } catch (error) {
+              setMessage(error.message);
+            }
+          }}
+        >
+          Save local architecture draft
+        </button>
+        <button
+          className="ghost"
+          onClick={() => {
+            if (!confirm("Replace the current editor with the saved draft?"))
+              return;
+            if (
+              change(
+                () => loadArchitectureDraft(localStorage, projectId),
+                "Saved architecture draft restored.",
+              )
+            ) {
+              setFrom("");
+              setTo("");
+            }
+          }}
+        >
+          Restore local architecture draft
+        </button>
+        <button
+          className="ghost"
+          onClick={() => {
+            if (!confirm("Remove this project's saved architecture draft?"))
+              return;
+            try {
+              clearArchitectureDraft(localStorage, projectId);
+              setMessage("Saved draft removed. Current editor unchanged.");
+            } catch (error) {
+              setMessage(error.message);
+            }
+          }}
+        >
+          Clear saved architecture draft
+        </button>
+        <details>
+          <summary>Import an exported architecture JSON draft</summary>
+          <label>
+            Architecture JSON
+            <textarea
+              aria-label="Architecture JSON"
+              rows={5}
+              maxLength={65536}
+              value={importText}
+              onChange={(event) => setImportText(event.target.value)}
+            />
+          </label>
+          <button
+            className="ghost"
+            disabled={!importText.trim()}
+            onClick={() => {
+              if (!confirm("Replace the current editor with this JSON draft?"))
+                return;
+              if (
+                change(
+                  () => parseArchitecture(importText),
+                  "Architecture JSON imported. Save explicitly to keep it.",
+                )
+              ) {
+                setImportText("");
+                setFrom("");
+                setTo("");
+              }
+            }}
+          >
+            Import architecture JSON
+          </button>
+        </details>
+      </div>
       <div className="twocol">
         <label>
           Entity name

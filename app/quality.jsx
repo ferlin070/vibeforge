@@ -2,6 +2,7 @@
 import { redactText, redactData, redactExportText } from "../lib/redact.mjs";
 import { useState } from "react";
 import CodeReview from "./code-review.jsx";
+import { rescuePlan, rescuePrompt } from "../lib/rescue.mjs";
 import { debugInvestigation } from "../lib/review-workbench.mjs";
 import {
   severities,
@@ -37,7 +38,8 @@ export default function Quality({
     [check, setCheck] = useState("functional"),
     [checkNote, setCheckNote] = useState(""),
     [rollback, setRollback] = useState(p?.quality?.rollback || ""),
-    [msg, setMsg] = useState("");
+    [msg, setMsg] = useState(""),
+    [symptoms, setSymptoms] = useState("");
   if (!p)
     return (
       <section className="panel">
@@ -150,19 +152,69 @@ export default function Quality({
         ))}
       </div>
       <div className="qualitytabs">
-        {["Bugs", "Code review", "Test plan", "GitHub CI", "Release"].map(
-          (x) => (
-            <button
-              disabled={busy}
-              key={x}
-              className={tab === x ? "" : "ghost"}
-              onClick={() => setTab(x)}
-            >
-              {x}
-            </button>
-          ),
-        )}
+        {[
+          "Bugs",
+          "Code review",
+          "Rescue",
+          "Test plan",
+          "GitHub CI",
+          "Release",
+        ].map((x) => (
+          <button
+            disabled={busy}
+            key={x}
+            className={tab === x ? "" : "ghost"}
+            onClick={() => setTab(x)}
+          >
+            {x}
+          </button>
+        ))}
       </div>
+      {tab === "Rescue" && (
+        <section className="panel" aria-label="Project rescue">
+          <h2>AI Project Rescue</h2>
+          <p>{rescuePlan(p).warning}</p>
+          <div className="summary">
+            <h3>Recovery priorities</h3>
+            {rescuePlan(p).actions.length ? (
+              <ol>
+                {rescuePlan(p).actions.map((action) => (
+                  <li key={action.label}>{action.label}</li>
+                ))}
+              </ol>
+            ) : (
+              <p>No missing recorded gates. Verify live evidence separately.</p>
+            )}
+            <p>
+              {rescuePlan(p).blockers.length} critical/high bugs ·{" "}
+              {rescuePlan(p).blocked.length} blocked tasks ·{" "}
+              {rescuePlan(p).review.length} pending reviews
+            </p>
+          </div>
+          <label>
+            Reported symptoms
+            <textarea
+              aria-label="Reported symptoms"
+              rows={5}
+              maxLength={5000}
+              value={symptoms}
+              onChange={(event) => setSymptoms(event.target.value)}
+              placeholder="Describe the failure, expected result and last known good version."
+            />
+          </label>
+          <button
+            className="ghost"
+            disabled={!symptoms.trim()}
+            onClick={() => dl(rescuePrompt(p, symptoms), "project-rescue.md")}
+          >
+            Export rescue investigation
+          </button>
+          <small>
+            Read-only planning for your chosen agent. No automatic changes,
+            external AI calls or recovery operations.
+          </small>
+        </section>
+      )}
       {tab === "Bugs" && (
         <>
           <section className="panel">

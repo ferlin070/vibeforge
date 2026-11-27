@@ -138,8 +138,20 @@ test("manual mission handoff and human review unlock next dependency", async ({
   await expect
     .poll(async () => (await stored(page))[0].evidence["TASK-001"].reviewed)
     .toBe(true);
-  const row = page.locator(".taskrow").filter({ hasText: "TASK-002" });
+  const row = page
+    .getByRole("region", { name: "Mission queue" })
+    .locator(".taskrow")
+    .filter({ hasText: "TASK-002" });
   await expect(row).toContainText("Ready");
+  const coordination = page.getByRole("region", { name: "Agent coordination" });
+  const nextTask = coordination
+    .locator(".taskrow")
+    .filter({ hasText: "TASK-002" });
+  await expect(nextTask).toContainText("Assign role");
+  await nextTask.getByRole("button", { name: "Select task" }).click();
+  await expect(
+    page.getByRole("button", { name: "Save assignment" }),
+  ).toBeEnabled();
   await nav(page, "Context manager").click();
   await expect(
     page.getByRole("heading", { name: "Project memory & handoff" }),

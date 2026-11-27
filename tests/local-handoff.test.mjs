@@ -76,11 +76,27 @@ test("offline Git preflight rejects dirty trees, wrong branch and wrong origin",
     const files = localHandoffFiles(p, "TASK-001");
     for (const name of ["JOB.json", "preflight.mjs", "runner.mjs"])
       writeFileSync(join(pack, name), redactExportText(files[name]));
-    const run = () =>
+    const run = (overrides = {}) =>
       spawnSync(process.execPath, [join(pack, "preflight.mjs")], {
         cwd: repo,
         encoding: "utf8",
+        env: { ...process.env, ...overrides },
       });
+    const initial = run();
+    assert.equal(initial.status, 0, initial.stderr);
+    assert.match(run({ GIT_DIR: join(repo, ".git") }).stderr, /Inherited Git/);
+    git("config", "filter.fixture.clean", "false");
+    assert.equal(run().status, 0);
+    writeFileSync(join(repo, ".gitattributes"), "README.md filter=fixture\n");
+    assert.match(run().stderr, /Tracked Git filters/);
+    rmSync(join(repo, ".gitattributes"));
+    git("config", "--unset", "filter.fixture.clean");
+    git("update-index", "--assume-unchanged", "README.md");
+    assert.match(run().stderr, /Hidden index flags/);
+    git("update-index", "--no-assume-unchanged", "README.md");
+    git("update-index", "--skip-worktree", "README.md");
+    assert.match(run().stderr, /Hidden index flags/);
+    git("update-index", "--no-skip-worktree", "README.md");
     assert.equal(run().status, 0);
     const check = spawnSync(process.execPath, [join(pack, "runner.mjs")], {
       cwd: repo,
@@ -120,6 +136,27 @@ test("receipt remains unverified and is bound to current task and repository", (
   const summary = reviewLocalReceipt(p, "TASK-001", JSON.stringify(receipt));
   assert.match(summary, /unverified/);
   assert.match(summary, /No implementation or test outcome/);
+  assert.throws(() =>
+    reviewLocalReceipt(
+      p,
+      "TASK-001",
+      JSON.stringify({ ...receipt, role: "qa" }),
+    ),
+  );
+  assert.throws(() =>
+    reviewLocalReceipt(
+      p,
+      "TASK-001",
+      JSON.stringify({ ...receipt, assignedAt: "2026-11-24" }),
+    ),
+  );
+  assert.throws(() =>
+    reviewLocalReceipt(
+      p,
+      "TASK-001",
+      JSON.stringify({ ...receipt, finishedAt: "2026-11-24T00:00:00.000Z" }),
+    ),
+  );
   assert.throws(() =>
     reviewLocalReceipt(
       p,

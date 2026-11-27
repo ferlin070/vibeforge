@@ -77,9 +77,10 @@ export default function Guide({ go, projects, exportAll, clearAll }) {
         <h2>Your data and privacy</h2>
         <p>
           Local projects, documents, reports and memory are stored in this
-          browser. Cloud backups are optional and saved to the VibeForge
+          browser. Saved architecture drafts and language preferences also stay
+          in this browser. Cloud backups are optional and saved to the VibeForge
           Supabase project when you request them. Signing out does not erase
-          local projects. Use a private browser profile on shared devices.
+          local data. Use a private browser profile on shared devices.
         </p>
         <p>
           API keys and GitHub tokens are held in the relevant form while in use
@@ -88,6 +89,13 @@ export default function Guide({ go, projects, exportAll, clearAll }) {
           requests send the selected repository reference and optional token to
           GitHub. Provider privacy, retention and charges depend on your
           provider agreement. Do not submit secrets in project notes or logs.
+        </p>
+        <p>
+          Direct shares and team publications store a limited project brief in
+          Supabase. Members can read existing team publications according to
+          their current role. Revoking a share or membership cannot erase a copy
+          already imported or downloaded by another person. Only share content
+          you have permission to disclose.
         </p>
         <p>
           These are product data-handling notes, not a finalized legal privacy
@@ -107,21 +115,38 @@ export default function Guide({ go, projects, exportAll, clearAll }) {
           </button>
         </div>
         <small>
-          Clearing local storage does not delete cloud snapshots or account. Use
-          Cloud account to manage saved snapshots.
+          Clearing local projects does not delete saved architecture drafts,
+          language preferences, cloud snapshots, team publications or the
+          account. Clear architecture drafts in the architecture editor first if
+          needed. Use Cloud account and Team collaboration to manage cloud
+          records.
         </small>
         <button className="ghost" onClick={() => go("cloud")}>
           Cloud account →
         </button>
       </section>
       <section className="panel studioPanel">
+        <h2>Workspace operations</h2>
+        <p>
+          Review blocked tasks, open high-priority bugs and missing recorded
+          release evidence across local projects. The report is not
+          platform-wide monitoring and does not expose other users’ private
+          records.
+        </p>
+        <button className="ghost" onClick={() => go("operations")}>
+          Open workspace operations →
+        </button>
+      </section>
+      <section className="panel studioPanel">
         <h2>Safety & limitations</h2>
         <p>
-          VibeForge does not execute coding agents, run arbitrary repository
-          code, certify test results or deploy user projects automatically.
-          Custom gateways require sign-in, public HTTPS and approved hosts in
-          hosted deployments. Always verify actual test evidence and obtain
-          release approval.
+          VibeForge does not remotely execute coding agents, run arbitrary
+          repository code, certify test results or deploy user projects
+          automatically. The optional local OpenCode runner requires an
+          explicitly confirmed launch on a trusted checkout. Custom gateways
+          require sign-in, public HTTPS and approved hosts in hosted
+          deployments. Always verify actual test evidence and obtain release
+          approval.
         </p>
       </section>
     </>

@@ -143,11 +143,25 @@ test("mocked AI failure and candidate review preserve existing work until apply"
     idea: "Build a revised booking workspace",
   });
   await page.route(origin + "/api/blueprint", async (route) => {
+    const request = route.request().postDataJSON();
+    expect(request.provider).toBe("gemini");
+    expect(request.model).toBe("gemini-2.5-flash");
     calls++;
     await route.fulfill(
       calls === 1
         ? { status: 422, json: { error: "AI returned malformed JSON." } }
-        : { status: 200, json: { blueprint: candidate } },
+        : {
+            status: 200,
+            json: {
+              blueprint: candidate,
+              usage: {
+                promptTokenCount: 500,
+                candidatesTokenCount: 900,
+                thoughtsTokenCount: 100,
+                totalTokenCount: 1500,
+              },
+            },
+          },
     );
   });
   await page.route(cloud + "/**", async (route) => {
@@ -173,7 +187,8 @@ test("mocked AI failure and candidate review preserve existing work until apply"
     .locator(".sidebar")
     .getByRole("button", { name: "AI blueprint", exact: true })
     .click();
-  const key = page.getByLabel(/API key/);
+  const key = page.getByLabel("Google Gemini API key");
+  await expect(page.getByLabel("Model ID")).toHaveValue("gemini-2.5-flash");
   const generate = page.getByRole("button", { name: "Generate with AI ✦" });
   await key.fill("fixture-key-1234");
   accept(page);
@@ -188,6 +203,20 @@ test("mocked AI failure and candidate review preserve existing work until apply"
   await expect(
     page.getByRole("heading", { name: "Generated candidate — not applied" }),
   ).toBeVisible();
+  await expect(page.getByLabel("Gemini token usage")).toContainText(
+    "Total tokens: 1500",
+  );
+  await expect(page.getByText("Estimated cost: Unavailable")).toBeVisible();
+  await page.getByLabel("Input price (USD per million tokens)").fill("1");
+  await page.getByLabel("Output price (USD per million tokens)").fill("2");
+  await expect(page.getByText("Estimated cost: USD 0.00250000")).toBeVisible();
+  const history = page.getByLabel("AI execution history");
+  await expect(
+    history.getByText("Candidate ready", { exact: true }),
+  ).toBeVisible();
+  await expect(history.getByText("Failed", { exact: true })).toBeVisible();
+  await expect(history).toContainText("Total tokens: 1500");
+  await expect(history).not.toContainText("fixture-key-1234");
   expect((await stored(page))[0].blueprint).toEqual(approved.blueprint);
   expect((await stored(page))[0].blueprintApproved).toBe(true);
   accept(page);
@@ -483,6 +512,19 @@ test("architecture draft exports entities and contracts without changing project
     .getByRole("button", { name: "Export architecture model" })
     .click();
   expect((await download).suggestedFilename()).toBe("architecture-draft.json");
+  await studio
+    .getByRole("button", { name: "Save local architecture draft" })
+    .click();
+  await expect(
+    studio.getByText("Architecture draft saved.", { exact: true }),
+  ).toBeVisible();
+  await page.reload();
+  accept(page);
+  await studio
+    .getByRole("button", { name: "Restore local architecture draft" })
+    .click();
+  await expect(studio.getByText("Customer → Booking")).toBeVisible();
+  await expect(studio.getByText("GET /api/bookings")).toBeVisible();
   expect((await stored(page))[0].blueprint).toEqual(approved.blueprint);
   expect((await stored(page))[0].blueprintApproved).toBe(true);
 });
@@ -570,6 +612,19 @@ test("collaboration shares only a brief and imports an independent draft", async
         );
         return route.fulfill({ status: 200, headers, json: [{ id: sentId }] });
       }
+      const params = new URL(req.url()).searchParams;
+      const exactId = params.get("id");
+      if (exactId) {
+        expect(params.get("recipient_id")).toBe("eq." + owner);
+        expect(params.get("limit")).toBe("1");
+        return route.fulfill({
+          status: 200,
+          headers,
+          json: rows.filter(
+            (row) => "eq." + row.id === exactId && row.recipient_id === owner,
+          ),
+        });
+      }
       return route.fulfill({ status: 200, headers, json: rows });
     }
     return route.fulfill({ status: 404, headers });
@@ -606,4 +661,347 @@ test("collaboration shares only a brief and imports an independent draft", async
   expect(projects[0].name).toBe("Peer project");
   expect(projects[0].blueprintApproved).toBe(false);
   expect(projects[1].blueprint).toEqual(approved.blueprint);
+});
+
+test("project rescue exports an investigation without changing approval", async ({
+  page,
+}) => {
+  await page.goto("/?view=quality");
+  await page.getByRole("button", { name: "Rescue", exact: true }).click();
+  const rescue = page.getByRole("region", { name: "Project rescue" });
+  await expect(
+    rescue.getByRole("heading", { name: "AI Project Rescue" }),
+  ).toBeVisible();
+  await rescue
+    .getByLabel("Reported symptoms")
+    .fill("Build failed with a timeout");
+  const download = page.waitForEvent("download");
+  await rescue
+    .getByRole("button", { name: "Export rescue investigation" })
+    .click();
+  expect((await download).suggestedFilename()).toBe("project-rescue.md");
+  expect((await stored(page))[0].blueprint).toEqual(approved.blueprint);
+  expect((await stored(page))[0].blueprintApproved).toBe(true);
+});
+
+test("team workspace owner creates a workspace and publishes an independent brief", async ({
+  page,
+}) => {
+  const owner = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+  const peer = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+  const teamId = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
+  const briefId = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
+  const spaces = [];
+  const members = [];
+  const briefs = [];
+  await page.route(cloud + "/**", async (route) => {
+    const req = route.request();
+    const url = new URL(req.url());
+    const method = req.method();
+    const headers = {
+      "access-control-allow-origin": origin,
+      "access-control-allow-headers":
+        "apikey, authorization, content-type, prefer",
+      "access-control-allow-methods": "GET, POST, PATCH, DELETE, OPTIONS",
+    };
+    if (method === "OPTIONS") return route.fulfill({ status: 204, headers });
+    if (url.pathname === "/auth/v1/token")
+      return route.fulfill({
+        status: 200,
+        headers,
+        json: { ...token, user: { ...token.user, id: owner } },
+      });
+    const tables = {
+      "/rest/v1/vibeforge_team_spaces": spaces,
+      "/rest/v1/vibeforge_team_members": members,
+      "/rest/v1/vibeforge_team_briefs": briefs,
+    };
+    const list = tables[url.pathname];
+    if (!list) return route.fulfill({ status: 404, headers });
+    if (method === "POST") {
+      const body = req.postDataJSON();
+      if (list === spaces) expect(body.owner_id).toBe(owner);
+      if (list === members) expect(body.role).toBe("viewer");
+      if (list === briefs) {
+        expect(body.author_id).toBe(owner);
+        expect(body.draft.blueprint).toBeUndefined();
+      }
+      const row = {
+        ...body,
+        ...(list === spaces ? { id: teamId } : {}),
+        ...(list === briefs ? { id: briefId } : {}),
+        created_at: fixture.createdAt,
+      };
+      list.push(row);
+      return route.fulfill({ status: 201, headers, json: [row] });
+    }
+    return route.fulfill({
+      status: 200,
+      headers,
+      json: list.filter((row) =>
+        ["id", "team_id", "user_id"].every(
+          (key) =>
+            !url.searchParams.has(key) ||
+            url.searchParams.get(key) === "eq." + row[key],
+        ),
+      ),
+    });
+  });
+  await page.goto("/?view=team");
+  await page.getByRole("button", { name: "Open cloud account" }).click();
+  await page.getByLabel("Email", { exact: true }).fill(token.user.email);
+  await page.getByLabel("Password", { exact: true }).fill("fixture-password");
+  await page.locator("form").getByRole("button", { name: "Sign in" }).click();
+  await expect(
+    page.getByRole("heading", { name: token.user.email }),
+  ).toBeVisible();
+  await page
+    .locator(".sidebar")
+    .getByRole("button", { name: "Team collaboration" })
+    .click();
+  const area = page.getByRole("region", { name: "Team workspaces" });
+  await area.getByLabel("Workspace name").fill("Test product team");
+  accept(page);
+  await area.getByRole("button", { name: "Create workspace" }).click();
+  await expect(area.getByText("Your role: owner")).toBeVisible();
+  await area.getByLabel("Member account ID").fill(peer);
+  accept(page);
+  await area.getByRole("button", { name: "Add member" }).click();
+  await expect(area.getByText("Member added.", { exact: true })).toBeVisible();
+  accept(page);
+  await area
+    .getByRole("button", { name: "Publish active project brief" })
+    .click();
+  await expect(
+    area.getByText("Brief published.", { exact: true }),
+  ).toBeVisible();
+  accept(page);
+  await area.getByRole("button", { name: "Import team draft" }).click();
+  await expect.poll(async () => (await stored(page)).length).toBe(2);
+  const projects = await stored(page);
+  expect(projects[0].blueprintApproved).toBe(false);
+  expect(projects[1].blueprint).toEqual(approved.blueprint);
+});
+
+test("operations and Malay navigation persist without changing project data", async ({
+  page,
+}) => {
+  await page.goto("/?view=operations");
+  const sidebar = page.locator(".sidebar");
+  await expect(
+    page.getByRole("heading", { name: "Workspace operations" }),
+  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: fixture.name })).toBeVisible();
+  const before = await stored(page);
+  await sidebar.getByLabel("Interface language").selectOption("ms");
+  await expect(
+    page.getByRole("heading", { name: "Operasi ruang kerja" }),
+  ).toBeVisible();
+  await page.reload();
+  await expect(sidebar.getByLabel("Bahasa antara muka")).toHaveValue("ms");
+  await expect(
+    page.getByRole("heading", { name: "Operasi ruang kerja" }),
+  ).toBeVisible();
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Eksport laporan ringkas" }).click();
+  expect((await download).suggestedFilename()).toBe(
+    "vibeforge-workspace-report.json",
+  );
+  expect(await stored(page)).toEqual(before);
+  await sidebar.getByLabel("Bahasa antara muka").selectOption("en");
+  await page.getByRole("button", { name: "Inspect quality" }).click();
+  await expect(page).toHaveURL(/view=quality.*project=integration-fixture/);
+});
+
+test("local backup import validates and restores independent drafts", async ({
+  page,
+}) => {
+  await page.goto("/?view=guide");
+  const input = page.getByLabel("Backup JSON file");
+  const before = await stored(page);
+  await input.setInputFiles({
+    name: "invalid.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(JSON.stringify([approved, approved])),
+  });
+  await expect(
+    page.getByText(/1–200 valid, uniquely identified/),
+  ).toBeVisible();
+  expect(await stored(page)).toEqual(before);
+  await input.setInputFiles({
+    name: "backup.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(JSON.stringify([approved])),
+  });
+  await expect(
+    page.getByRole("heading", { name: "1 valid project(s)" }),
+  ).toBeVisible();
+  accept(page);
+  await page.getByRole("button", { name: "Import as new drafts" }).click();
+  await expect(
+    page.getByText("1 recovered draft(s) saved locally."),
+  ).toBeVisible();
+  const after = await stored(page);
+  expect(after).toHaveLength(2);
+  expect(after[0].id).not.toBe(approved.id);
+  expect(after[0].blueprintApproved).toBe(false);
+  expect(after[1]).toEqual(before[0]);
+  await page.reload();
+  expect(await stored(page)).toEqual(after);
+});
+
+test("late sign-in cannot activate a departed account view", async ({
+  page,
+}) => {
+  let release;
+  const gate = new Promise((resolve) => {
+    release = resolve;
+  });
+  let started;
+  const pending = new Promise((resolve) => {
+    started = resolve;
+  });
+  await page.route(cloud + "/**", async (route) => {
+    const headers = {
+      "access-control-allow-origin": origin,
+      "access-control-allow-headers": "apikey, authorization, content-type",
+      "access-control-allow-methods": "POST, OPTIONS",
+    };
+    if (route.request().method() === "OPTIONS")
+      return route.fulfill({ status: 204, headers });
+    started();
+    await gate;
+    await route.fulfill({ status: 200, headers, json: token });
+  });
+  await page.goto("/?view=cloud");
+  await page.getByLabel("Email", { exact: true }).fill(token.user.email);
+  await page.getByLabel("Password", { exact: true }).fill("fixture-password");
+  await page.locator("form").getByRole("button", { name: "Sign in" }).click();
+  await pending;
+  await page
+    .locator(".sidebar")
+    .getByRole("button", { name: "Overview", exact: true })
+    .click();
+  const response = page.waitForResponse(
+    (res) => res.url().includes("/auth/v1/token") && res.status() === 200,
+  );
+  release();
+  await response;
+  await page
+    .locator(".sidebar")
+    .getByRole("button", { name: "Cloud account" })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Welcome back" }),
+  ).toBeVisible();
+  expect(await stored(page)).toEqual([approved]);
+});
+
+test("delayed logout cannot clear a replacement account", async ({ page }) => {
+  let release;
+  const gate = new Promise((resolve) => {
+    release = resolve;
+  });
+  let started;
+  const pending = new Promise((resolve) => {
+    started = resolve;
+  });
+  const other = {
+    ...token,
+    access_token: "fixture.other.token",
+    refresh_token: "fixture-other-refresh",
+    user: { id: "fixture-other", email: "other@example.invalid" },
+  };
+  await page.route(cloud + "/**", async (route) => {
+    const req = route.request();
+    const url = new URL(req.url());
+    const headers = {
+      "access-control-allow-origin": origin,
+      "access-control-allow-headers": "apikey, authorization, content-type",
+      "access-control-allow-methods": "POST, OPTIONS",
+    };
+    if (req.method() === "OPTIONS")
+      return route.fulfill({ status: 204, headers });
+    if (url.pathname === "/auth/v1/logout") {
+      expect(url.searchParams.get("scope")).toBe("local");
+      expect(req.headers().authorization).toBe("Bearer " + token.access_token);
+      started();
+      await gate;
+      return route.fulfill({ status: 204, headers });
+    }
+    return route.fulfill({
+      status: 200,
+      headers,
+      json: req.postDataJSON().email === other.user.email ? other : token,
+    });
+  });
+  const login = async (email) => {
+    await page.getByLabel("Email", { exact: true }).fill(email);
+    await page.getByLabel("Password", { exact: true }).fill("fixture-password");
+    await page.locator("form").getByRole("button", { name: "Sign in" }).click();
+    await expect(page.getByRole("heading", { name: email })).toBeVisible();
+  };
+  await page.goto("/?view=cloud");
+  await login(token.user.email);
+  await page.getByRole("button", { name: "Sign out" }).click();
+  await pending;
+  await login(other.user.email);
+  const response = page.waitForResponse(
+    (res) => res.url().includes("/auth/v1/logout") && res.status() === 204,
+  );
+  release();
+  await response;
+  await expect(
+    page.getByRole("heading", { name: other.user.email }),
+  ).toBeVisible();
+  expect(await stored(page)).toEqual([approved]);
+});
+
+test("failed cloud logout preserves local sign-out and projects", async ({
+  page,
+}) => {
+  let logoutCalls = 0;
+  await page.route(cloud + "/**", async (route) => {
+    const req = route.request();
+    const url = new URL(req.url());
+    const headers = {
+      "access-control-allow-origin": origin,
+      "access-control-allow-headers": "apikey, authorization, content-type",
+      "access-control-allow-methods": "POST, OPTIONS",
+    };
+    if (req.method() === "OPTIONS")
+      return route.fulfill({ status: 204, headers });
+    if (url.pathname === "/auth/v1/logout") {
+      expect(url.searchParams.get("scope")).toBe("local");
+      expect(req.headers().authorization).toBe("Bearer " + token.access_token);
+      logoutCalls++;
+      return route.fulfill({ status: 503, headers, json: {} });
+    }
+    expect(url.pathname).toBe("/auth/v1/token");
+    return route.fulfill({ status: 200, headers, json: token });
+  });
+  await page.goto("/?view=cloud");
+  await page.getByLabel("Email", { exact: true }).fill(token.user.email);
+  await page.getByLabel("Password", { exact: true }).fill("fixture-password");
+  await page.locator("form").getByRole("button", { name: "Sign in" }).click();
+  await expect(
+    page.getByRole("heading", { name: token.user.email }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Sign out" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Welcome back" }),
+  ).toBeVisible();
+  await expect(page.locator(".notice")).toHaveText(
+    "Previous session signed out locally. Cloud revocation could not be confirmed.",
+  );
+  await expect(
+    page.getByRole("heading", { name: token.user.email }),
+  ).toHaveCount(0);
+  expect(logoutCalls).toBe(1);
+  expect(await stored(page)).toEqual([approved]);
+  await page.reload();
+  await expect(
+    page.getByRole("heading", { name: "Welcome back" }),
+  ).toBeVisible();
+  expect(await stored(page)).toEqual([approved]);
 });

@@ -1,5 +1,8 @@
 "use client";
 import { useState } from "react";
+import RootsysTask from "./rootsys-task.jsx";
+import { taskPlanContext } from "../lib/rootsys-task.mjs";
+import { orchestrationQueue } from "../lib/agent-workflow.mjs";
 import { agents } from "../lib/context.mjs";
 import { localHandoffFiles } from "../lib/local-handoff.mjs";
 import { reviewLocalReceipt } from "../lib/local-runner.mjs";
@@ -21,6 +24,7 @@ export default function Mission({
   update,
   newProject,
   openStudio,
+  session,
 }) {
   const [filter, setFilter] = useState("All"),
     [taskId, setTaskId] = useState(""),
@@ -44,6 +48,12 @@ export default function Mission({
       choice[t?.id]?.agent ||
       t?.assignment?.agent ||
       (agents.includes(p.agent) ? p.agent : "Universal");
+  const queue = orchestrationQueue(p);
+  const inspect = (id) => {
+    setTaskId(id);
+    setReceipt("");
+    setReport(p.evidence?.[id]?.report || "");
+  };
   const run = (fn) => {
     try {
       if (!update(fn())) {
@@ -59,6 +69,14 @@ export default function Mission({
   const actionable =
     t && ["Ready", "Assigned", "Handed off"].includes(t.status);
   const currentReport = p.evidence?.[t?.id]?.report;
+  let aiContext = null;
+  if (session && t?.status === "Assigned") {
+    try {
+      aiContext = taskPlanContext(p, t.id);
+    } catch {
+      // Oversized or invalid tasks remain available for manual handoff.
+    }
+  }
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(missionPrompt(p, t.id));
@@ -171,7 +189,43 @@ export default function Mission({
           <button onClick={openStudio}>Open Blueprint Studio →</button>
         </section>
       )}
-      <section className="panel studioPanel">
+      <section className="panel studioPanel" aria-label="Agent coordination">
+        <h2>Multi-agent coordination</h2>
+        <p>Suggested next actions. No automatic dispatch or execution.</p>
+        <p>
+          {queue.actionable.length} actionable · {queue.blocked.length} blocked
+          · {queue.awaitingApproval} awaiting approval · {queue.reviewed}{" "}
+          reviewed
+        </p>
+        {queue.actionable.map((item) => (
+          <article className="taskrow" key={item.id}>
+            <div>
+              <small>
+                {item.id} · {item.role}
+              </small>
+              <h3>{item.title}</h3>
+              <p>{item.nextAction}</p>
+              <small>{item.dependentCount} unfinished direct dependents</small>
+            </div>
+            <button className="ghost" onClick={() => inspect(item.id)}>
+              Select task
+            </button>
+          </article>
+        ))}
+        {!queue.actionable.length && <p>No actionable tasks.</p>}
+        {queue.blocked.length > 0 && (
+          <details>
+            <summary>Blocked dependencies ({queue.blocked.length})</summary>
+            {queue.blocked.map((item) => (
+              <p key={item.id}>
+                {item.id} · {item.title}: waiting for{" "}
+                {item.waitingFor.join(", ")}
+              </p>
+            ))}
+          </details>
+        )}
+      </section>
+      <section className="panel studioPanel" aria-label="Mission queue">
         <div className="sectionhead">
           <h2>Mission queue</h2>
           <label className="missionfilter">
@@ -212,11 +266,7 @@ export default function Mission({
               </div>
               <button
                 className={t?.id === x.id ? "" : "ghost"}
-                onClick={() => {
-                  setTaskId(x.id);
-                  setReceipt("");
-                  setReport(p.evidence?.[x.id]?.report || "");
-                }}
+                onClick={() => inspect(x.id)}
               >
                 Inspect →
               </button>
@@ -289,6 +339,13 @@ export default function Mission({
           >
             Save assignment
           </button>
+          {aiContext && (
+            <RootsysTask
+              key={JSON.stringify([session.id, t.assignment, aiContext])}
+              context={aiContext}
+              session={session}
+            />
+          )}
           <button
             className="ghost"
             disabled={!actionable || !t.assignment}

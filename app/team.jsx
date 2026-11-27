@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import TeamSpaces from "./team-space.jsx";
 import { cloudRequest } from "../lib/cloud-auth.mjs";
 import {
+  getReceivedDraft,
   importSharedDraft,
   listSharedDrafts,
   revokeSharedDraft,
@@ -15,6 +17,13 @@ export default function Team({ project, session, go, onImport }) {
   const [rows, setRows] = useState([]);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const active = useRef(false);
+  useEffect(() => {
+    active.current = true;
+    return () => {
+      active.current = false;
+    };
+  }, []);
   const run = async (operation) => {
     setBusy(true);
     try {
@@ -60,6 +69,7 @@ export default function Team({ project, session, go, onImport }) {
               Copy account ID
             </button>
           </section>
+          <TeamSpaces project={project} session={session} onImport={onImport} />
           <section className="panel studioPanel">
             <h2>Share active project brief</h2>
             {!project ? (
@@ -181,14 +191,12 @@ export default function Team({ project, session, go, onImport }) {
                       run(async () => {
                         if (!confirm("Import as a new unapproved local draft?"))
                           return;
-                        const latest = await listSharedDrafts(
+                        const current = await getReceivedDraft(
+                          row.id,
                           session,
                           cloudRequest,
                         );
-                        const current = latest.find(
-                          (item) => item.id === row.id,
-                        );
-                        if (!current) throw Error("Share no longer available.");
+                        if (!active.current) return;
                         onImport(
                           importSharedDraft(
                             current,
