@@ -6,6 +6,7 @@ import {
   taskPlanContext,
   validateTaskPlan,
   normalizeTask,
+  reviewedTaskPlan,
 } from "../lib/rootsys-task.mjs";
 import { POST } from "../app/api/rootsys/task/route.js";
 
@@ -120,4 +121,19 @@ test("task route shares owner quota and calls only the fixed gateway", async () 
       else process.env[name] = previous[name];
     }
   }
+});
+
+test("advisory export requires explicit review and changes no project state", () => {
+  const before = JSON.stringify(assigned);
+  const context = taskPlanContext(assigned, id);
+  assert.throws(() => reviewedTaskPlan(context, plan, false));
+  assert.throws(() => reviewedTaskPlan(context, plan, "true"));
+  const artifact = reviewedTaskPlan(context, plan, true);
+  assert.equal(artifact.schema, "vf-advisory-plan-v1");
+  assert.deepEqual(artifact.task, context);
+  assert.deepEqual(artifact.suggestions, plan);
+  assert.match(artifact.status, /execution unverified/);
+  assert.equal(JSON.stringify(assigned), before);
+  assert.ok(!Object.hasOwn(artifact, "evidence"));
+  assert.ok(!Object.hasOwn(artifact, "handoff"));
 });
