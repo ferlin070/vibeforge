@@ -53,7 +53,10 @@ export async function POST(req) {
       cache: "no-store",
     });
     if (!upstream.ok) throw providerFailure(upstream.status);
-    const output = extractOutput("rootsys", await boundedJSON(upstream, 100000));
+    const output = extractOutput(
+      "rootsys",
+      await boundedJSON(upstream, 100000),
+    );
     if (output.includes(key)) throw Error("Sensitive response.");
     const plan = validateTaskPlan(parseOutput(output));
     if (JSON.stringify(plan).includes(JSON.stringify(key).slice(1, -1)))
