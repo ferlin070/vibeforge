@@ -1,11 +1,17 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { starterBlueprint } from "../lib/blueprint.mjs";
-import { assignTask } from "../lib/mission.mjs";
+import {
+  assignTask,
+  handoffTask,
+  submitMissionReport,
+  reviewMission,
+} from "../lib/mission.mjs";
 import {
   assignWorkflowSuggestion,
   workflowLanes,
   workflowPreview,
+  orchestrationQueue,
 } from "../lib/agent-workflow.mjs";
 
 const project = {
@@ -87,4 +93,40 @@ test("workflow suggestions assign only ready unassigned tasks", () => {
     ),
   );
   assert.equal(JSON.stringify(project), before);
+});
+
+test("coordination queue never advances blocked or unapproved tasks", () => {
+  const before = JSON.stringify(project);
+  const queue = orchestrationQueue(project);
+  assert.deepEqual(
+    queue.actionable.map((task) => task.id),
+    ["TASK-001"],
+  );
+  assert.equal(queue.actionable[0].nextAction, "Assign role");
+  assert.deepEqual(queue.blocked[0].waitingFor, ["TASK-001"]);
+  const draft = orchestrationQueue({ ...project, blueprintApproved: false });
+  assert.equal(draft.actionable.length, 0);
+  assert.equal(draft.awaitingApproval, project.blueprint.tasks.length);
+  assert.equal(JSON.stringify(project), before);
+});
+
+test("coordination follows human handoff and review without changing state", () => {
+  const id = "TASK-001";
+  const now = "2026-11-25";
+  let next = { ...project, ...assignTask(project, id, "qa", "Codex", now) };
+  assert.equal(orchestrationQueue(next).actionable[0].role, "QA Engineer");
+  next = { ...next, ...handoffTask(next, id, now) };
+  assert.equal(
+    orchestrationQueue(next).actionable[0].nextAction,
+    "Collect implementation evidence",
+  );
+  next = { ...next, ...submitMissionReport(next, id, "Evidence", now) };
+  assert.equal(
+    orchestrationQueue(next).actionable[0].nextAction,
+    "Review evidence",
+  );
+  next = { ...next, ...reviewMission(next, id, true, now) };
+  assert.equal(orchestrationQueue(next).actionable[0].id, "TASK-002");
+  next = { ...next, ...reviewMission(next, id, false, now) };
+  assert.equal(orchestrationQueue(next).blocked[0].id, "TASK-002");
 });
