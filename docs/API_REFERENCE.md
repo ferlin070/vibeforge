@@ -85,3 +85,7 @@ After reviewing a Rootsys task plan, the operator may explicitly confirm review 
 ### Multi-agent coordination
 
 Mission Control derives a read-only coordination queue from the existing validated blueprint and mission state. It prioritizes evidence review, assigned tasks, ready tasks and handoff follow-up, then the number of unfinished direct dependents within each group. Blocked tasks expose unreviewed dependency IDs. Selection only opens a task for manual action; it never assigns, dispatches, runs or approves tasks. The queue is recomputed from current local project state and makes no additional provider calls. This is coordination assistance, not autonomous multi-agent execution or a durable job queue.
+
+### Private pilot activation
+
+Follow [Rootsys pilot runbook](ROOTSYS-PILOT-RUNBOOK.md). Start with a zero output allocation: after exact CI and owner readiness checks, enable read-only provider inspection without allowing inference. Never place credentials in a chat, repository, public environment variable or production configuration. Studio and Mission Control remount their transient state when the account identity changes; local browser projects remain local-first and are not account-isolated storage.
